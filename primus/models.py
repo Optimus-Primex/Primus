@@ -15,9 +15,12 @@ import secrets
 from datetime import UTC, datetime, timedelta
 
 from flask_login import UserMixin
+from sqlalchemy import Integer, cast, func, select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .extensions import db
+
+_UNSET = object()
 
 STATUS_UP = "up"
 STATUS_DOWN = "down"
@@ -133,15 +136,69 @@ class Monitor(db.Model):
         return self.next_check_at
 
     def uptime_percentage(self, limit: int = 100) -> float | None:
-        """Uptime over the most recent ``limit`` checks (``None`` if no data)."""
+        """Uptime over the most recent ``limit`` checks (``None`` if no data).
 
-        recent = self.checks.limit(limit).all()
-        if not recent:
+        Aggregated in SQL so a single row is transferred instead of loading up
+        to ``limit`` ORM objects.
+        """
+
+        ranked = (
+            select(Check.success)
+            .where(Check.monitor_id == self.id)
+            .order_by(Check.checked_at.desc())
+            .limit(limit)
+            .subquery()
+        )
+        total, successes = db.session.execute(
+            select(
+                func.count(ranked.c.success),
+                func.sum(cast(ranked.c.success, Integer)),
+            )
+        ).one()
+        if not total:
             return None
-        successes = sum(1 for check in recent if check.success)
-        return round(successes / len(recent) * 100, 2)
+        return round((successes or 0) / total * 100, 2)
 
-    def to_dict(self) -> dict:
+    @staticmethod
+    def uptime_map(monitors, limit: int = 100) -> dict:
+        """Return ``{monitor_id: uptime}`` for many monitors in one query.
+
+        This avoids the N+1 pattern when listing monitors.
+        """
+
+        ids = [getattr(monitor, "id", monitor) for monitor in monitors]
+        if not ids:
+            return {}
+        ranked = (
+            select(
+                Check.monitor_id,
+                Check.success,
+                func.row_number()
+                .over(partition_by=Check.monitor_id, order_by=Check.checked_at.desc())
+                .label("rn"),
+            )
+            .where(Check.monitor_id.in_(ids))
+            .subquery()
+        )
+        rows = db.session.execute(
+            select(
+                ranked.c.monitor_id,
+                func.count(ranked.c.success),
+                func.sum(cast(ranked.c.success, Integer)),
+            )
+            .where(ranked.c.rn <= limit)
+            .group_by(ranked.c.monitor_id)
+        ).all()
+        result = {
+            monitor_id: round((successes or 0) / total * 100, 2)
+            for monitor_id, total, successes in rows
+            if total
+        }
+        for monitor_id in ids:
+            result.setdefault(monitor_id, None)
+        return result
+
+    def to_dict(self, uptime=_UNSET) -> dict:
         return {
             "id": self.id,
             "name": self.name,
@@ -157,7 +214,7 @@ class Monitor(db.Model):
             "last_checked_at": _iso(self.last_checked_at),
             "next_check_at": _iso(self.next_check_at),
             "consecutive_failures": self.consecutive_failures,
-            "uptime_percentage": self.uptime_percentage(),
+            "uptime_percentage": self.uptime_percentage() if uptime is _UNSET else uptime,
             "created_at": _iso(self.created_at),
             "updated_at": _iso(self.updated_at),
         }

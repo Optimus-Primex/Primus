@@ -36,7 +36,8 @@
           </td>
           <td><a href="{{ url_for('dashboard.monitor_detail', monitor_id=monitor.id) }}">{{ monitor.name }}</a></td>
           <td class="mono ellipsis" title="{{ monitor.url }}">{{ monitor.url }}</td>
-          <td>{{ monitor.uptime_percentage() if monitor.uptime_percentage() is not none else '—' }}{% if monitor.uptime_percentage() is not none %}%{% endif %}</td>
+          {% set uptime = uptimes.get(monitor.id) %}
+          <td>{{ uptime if uptime is not none else '—' }}{% if uptime is not none %}%{% endif %}</td>
           <td>{{ monitor.last_checked_at.strftime('%Y-%m-%d %H:%M') if monitor.last_checked_at else 'never' }}</td>
           <td>
             <form method="post" action="{{ url_for('dashboard.run_check', monitor_id=monitor.id) }}" class="inline">

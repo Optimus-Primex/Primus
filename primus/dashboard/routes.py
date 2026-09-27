@@ -41,7 +41,12 @@ def index():
         .filter(Monitor.user_id == current_user.id, Incident.status == INCIDENT_OPEN)
         .count(),
     }
-    return render_template("dashboard/index.html", monitors=monitors, summary=summary)
+    return render_template(
+        "dashboard/index.html",
+        monitors=monitors,
+        summary=summary,
+        uptimes=Monitor.uptime_map(monitors),
+    )
 
 
 @bp.get("/monitors/new")

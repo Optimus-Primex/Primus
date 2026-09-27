@@ -49,7 +49,10 @@ def health():
 @api_auth_required
 def list_monitors():
     monitors = Monitor.query.filter_by(user_id=g.api_user.id).order_by(Monitor.id.asc()).all()
-    return jsonify({"monitors": [monitor.to_dict() for monitor in monitors]})
+    uptimes = Monitor.uptime_map(monitors)
+    return jsonify(
+        {"monitors": [monitor.to_dict(uptime=uptimes.get(monitor.id)) for monitor in monitors]}
+    )
 
 
 @bp.post("/monitors")
