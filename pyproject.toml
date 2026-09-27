@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "primus"
+version = "0.1.0"
+description = "Self-hosted uptime and endpoint monitoring with a REST API."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Primus contributors" }]
+keywords = ["uptime", "monitoring", "observability", "status", "flask"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: System :: Monitoring",
+]
+
+[project.urls]
+Homepage = "https://github.com/Primex-Tech/Primus"
+
+[tool.setuptools]
+packages = ["primus", "primus.api", "primus.auth", "primus.dashboard", "primus.services"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = ["integration: tests that touch the database"]
+
+[tool.coverage.run]
+source = ["primus"]
+branch = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+# Alembic-generated migrations are not hand-written code.
+exclude = ["migrations"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "C4"]
+ignore = ["E501"]
