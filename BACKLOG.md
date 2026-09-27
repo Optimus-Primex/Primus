@@ -2,7 +2,7 @@
 
 Primus keeps a deliberately small **active** issue list. Everything else lives here so good ideas are not lost, but the contributor surface stays coherent. Deferred items are closed on GitHub and can be reopened when they become a priority.
 
-_Active issues: 21 · Deferred ideas: 171._
+_Active issues: 41 · Deferred ideas: 151._
 
 ## Active (near-term)
 
@@ -10,30 +10,48 @@ _Active issues: 21 · Deferred ideas: 171._
 
 - [#2](https://github.com/Primex-Tech/Primus/issues/2) — Support expected HTTP status ranges instead of a single code _(`medium`)
 - [#3](https://github.com/Primex-Tech/Primus/issues/3) — Add response body assertions (contains / regex) to checks _(`medium`)
+- [#4](https://github.com/Primex-Tech/Primus/issues/4) — Support per-monitor custom request headers _(`medium`)
+- [#5](https://github.com/Primex-Tech/Primus/issues/5) — Add POST/PUT checks with a JSON request body _(`medium`)
 - [#7](https://github.com/Primex-Tech/Primus/issues/7) — Add JSON-path assertions for API monitoring _(`hard`)
 - [#8](https://github.com/Primex-Tech/Primus/issues/8) — Add tags/labels to monitors and filtering _(`medium`)
 - [#15](https://github.com/Primex-Tech/Primus/issues/15) — Add TLS/SSL certificate expiry monitoring _(`hard`)
 - [#16](https://github.com/Primex-Tech/Primus/issues/16) — Add TCP port monitoring _(`hard`)
+- [#17](https://github.com/Primex-Tech/Primus/issues/17) — Add ICMP/ping monitoring _(`hard`)
+- [#18](https://github.com/Primex-Tech/Primus/issues/18) — Add DNS record monitoring _(`hard`)
+- [#19](https://github.com/Primex-Tech/Primus/issues/19) — Add multi-step HTTP transaction checks _(`hard`)
 - [#25](https://github.com/Primex-Tech/Primus/issues/25) — Add configurable check result retention and pruning _(`medium`)
 - [#102](https://github.com/Primex-Tech/Primus/issues/102) — Add composite monitors with dependencies _(`hard`)
 - [#103](https://github.com/Primex-Tech/Primus/issues/103) — Add push/heartbeat (dead-man's switch) monitoring _(`hard`)
+- [#106](https://github.com/Primex-Tech/Primus/issues/106) — Add configurable HTTP redirect policy to checks _(`medium`)
 
 ### Alerting
 
 - [#1](https://github.com/Primex-Tech/Primus/issues/1) — Implement a pluggable alerting and notification subsystem _(`hard`)
 - [#13](https://github.com/Primex-Tech/Primus/issues/13) — Add maintenance windows to suppress checks and alerts _(`hard`)
+- [#21](https://github.com/Primex-Tech/Primus/issues/21) — Add anti-flapping / confirmation window for incidents _(`medium`)
+- [#35](https://github.com/Primex-Tech/Primus/issues/35) — Add alert escalation policies _(`hard`)
 - [#43](https://github.com/Primex-Tech/Primus/issues/43) — Provide a reference webhook receiver with signature verification _(`medium`)
+- [#44](https://github.com/Primex-Tech/Primus/issues/44) — Add incident acknowledgement _(`medium`)
+- [#46](https://github.com/Primex-Tech/Primus/issues/46) — Add incident severity levels _(`medium`)
 
 ### Reliability
 
+- [#26](https://github.com/Primex-Tech/Primus/issues/26) — Add hourly/daily uptime rollups for long-term history _(`hard`)
+- [#90](https://github.com/Primex-Tech/Primus/issues/90) — Add migration rollback tests _(`medium`)
 - [#167](https://github.com/Primex-Tech/Primus/issues/167) — Verify models and migrations on PostgreSQL _(`medium`)
 - [#169](https://github.com/Primex-Tech/Primus/issues/169) — Add a database lease for scheduler leadership _(`hard`)
 
 ### Security
 
+- [#6](https://github.com/Primex-Tech/Primus/issues/6) — Add per-monitor HTTP authentication (Basic and Bearer) _(`hard`)
 - [#59](https://github.com/Primex-Tech/Primus/issues/59) — Add rate limiting to login and registration _(`medium`)
 - [#61](https://github.com/Primex-Tech/Primus/issues/61) — Add password reset via email _(`hard`)
+- [#62](https://github.com/Primex-Tech/Primus/issues/62) — Add email verification on registration _(`hard`)
 - [#67](https://github.com/Primex-Tech/Primus/issues/67) — Harden the SSRF guard with DNS pinning _(`hard`)
+- [#70](https://github.com/Primex-Tech/Primus/issues/70) — Add dependency vulnerability scanning to CI _(`easy`)
+- [#71](https://github.com/Primex-Tech/Primus/issues/71) — Add secret scanning to CI _(`easy`)
+- [#72](https://github.com/Primex-Tech/Primus/issues/72) — Add automated tests for security headers _(`easy`)
+- [#82](https://github.com/Primex-Tech/Primus/issues/82) — Add rate limiting for the API _(`medium`)
 - [#189](https://github.com/Primex-Tech/Primus/issues/189) — Encrypt secret columns with an application key _(`hard`)
 
 ### Api
@@ -42,28 +60,27 @@ _Active issues: 21 · Deferred ideas: 171._
 
 ### Observability
 
+- [#78](https://github.com/Primex-Tech/Primus/issues/78) — Add request IDs and correlation to logs _(`medium`)
 - [#79](https://github.com/Primex-Tech/Primus/issues/79) — Add optional structured JSON logging _(`medium`)
 - [#80](https://github.com/Primex-Tech/Primus/issues/80) — Add a Prometheus /metrics endpoint _(`hard`)
+
+### Testing
+
+- [#91](https://github.com/Primex-Tech/Primus/issues/91) — Add a coverage gate to CI _(`easy`)
 
 ## Deferred
 
 ### Monitoring
 
-- [#4](https://github.com/Primex-Tech/Primus/issues/4) — Support per-monitor custom request headers _(`medium`)
-- [#5](https://github.com/Primex-Tech/Primus/issues/5) — Add POST/PUT checks with a JSON request body _(`medium`)
 - [#9](https://github.com/Primex-Tech/Primus/issues/9) — Add monitor groups/folders _(`hard`)
 - [#10](https://github.com/Primex-Tech/Primus/issues/10) — Add bulk monitor actions (pause, enable, delete) _(`medium`)
 - [#11](https://github.com/Primex-Tech/Primus/issues/11) — Add monitor cloning/duplication _(`—`)
 - [#12](https://github.com/Primex-Tech/Primus/issues/12) — Import and export monitors as JSON/YAML _(`hard`)
-- [#17](https://github.com/Primex-Tech/Primus/issues/17) — Add ICMP/ping monitoring _(`hard`)
-- [#18](https://github.com/Primex-Tech/Primus/issues/18) — Add DNS record monitoring _(`hard`)
-- [#19](https://github.com/Primex-Tech/Primus/issues/19) — Add multi-step HTTP transaction checks _(`hard`)
 - [#20](https://github.com/Primex-Tech/Primus/issues/20) — Add global and per-monitor uptime/SLA reporting _(`hard`)
 - [#23](https://github.com/Primex-Tech/Primus/issues/23) — Add latency percentile metrics per monitor _(`medium`)
 - [#24](https://github.com/Primex-Tech/Primus/issues/24) — Add HTTP method/endpoint to the health check for readiness vs liveness _(`easy`)
 - [#51](https://github.com/Primex-Tech/Primus/issues/51) — Add a time-range selector to monitor detail _(`medium`)
 - [#88](https://github.com/Primex-Tech/Primus/issues/88) — Add a dead-letter queue for permanently failed deliveries/checks _(`medium`)
-- [#106](https://github.com/Primex-Tech/Primus/issues/106) — Add configurable HTTP redirect policy to checks _(`medium`)
 - [#108](https://github.com/Primex-Tech/Primus/issues/108) — Support custom CA bundles and self-signed certificates _(`hard`)
 - [#109](https://github.com/Primex-Tech/Primus/issues/109) — Add IPv4/IPv6 preference per monitor _(`medium`)
 - [#110](https://github.com/Primex-Tech/Primus/issues/110) — Add active-hours scheduling windows per monitor _(`hard`)
@@ -94,7 +111,6 @@ _Active issues: 21 · Deferred ideas: 171._
 ### Alerting
 
 - [#14](https://github.com/Primex-Tech/Primus/issues/14) — Add per-monitor notification channel overrides _(`medium`)
-- [#21](https://github.com/Primex-Tech/Primus/issues/21) — Add anti-flapping / confirmation window for incidents _(`medium`)
 - [#28](https://github.com/Primex-Tech/Primus/issues/28) — Add a Slack notification channel _(`medium`)
 - [#29](https://github.com/Primex-Tech/Primus/issues/29) — Add a Discord notification channel _(`easy`)
 - [#30](https://github.com/Primex-Tech/Primus/issues/30) — Add a Telegram notification channel _(`medium`)
@@ -102,7 +118,6 @@ _Active issues: 21 · Deferred ideas: 171._
 - [#32](https://github.com/Primex-Tech/Primus/issues/32) — Add a PagerDuty notification channel _(`medium`)
 - [#33](https://github.com/Primex-Tech/Primus/issues/33) — Add an SMS notification channel via Twilio _(`medium`)
 - [#34](https://github.com/Primex-Tech/Primus/issues/34) — Add notification event filters (by severity, tag, or monitor) _(`hard`)
-- [#35](https://github.com/Primex-Tech/Primus/issues/35) — Add alert escalation policies _(`hard`)
 - [#36](https://github.com/Primex-Tech/Primus/issues/36) — Add on-call schedules _(`hard`)
 - [#37](https://github.com/Primex-Tech/Primus/issues/37) — Add customisable notification message templates _(`medium`)
 - [#38](https://github.com/Primex-Tech/Primus/issues/38) — Add recovery reminders and re-notification for long incidents _(`medium`)
@@ -110,9 +125,7 @@ _Active issues: 21 · Deferred ideas: 171._
 - [#40](https://github.com/Primex-Tech/Primus/issues/40) — Add per-channel quiet hours _(`medium`)
 - [#41](https://github.com/Primex-Tech/Primus/issues/41) — Add a channel test action with delivery history _(`medium`)
 - [#42](https://github.com/Primex-Tech/Primus/issues/42) — Document and version webhook payloads _(`easy`)
-- [#44](https://github.com/Primex-Tech/Primus/issues/44) — Add incident acknowledgement _(`medium`)
 - [#45](https://github.com/Primex-Tech/Primus/issues/45) — Add an incident timeline with comments _(`hard`)
-- [#46](https://github.com/Primex-Tech/Primus/issues/46) — Add incident severity levels _(`medium`)
 - [#47](https://github.com/Primex-Tech/Primus/issues/47) — Add manual incident creation and merging _(`medium`)
 - [#48](https://github.com/Primex-Tech/Primus/issues/48) — Add CSV/JSON export of checks and incidents _(`medium`)
 - [#104](https://github.com/Primex-Tech/Primus/issues/104) — Add status page incident history and email subscriptions _(`hard`)
@@ -127,25 +140,17 @@ _Active issues: 21 · Deferred ideas: 171._
 ### Reliability
 
 - [#22](https://github.com/Primex-Tech/Primus/issues/22) — Add request jitter to the scheduler to avoid thundering herd _(`easy`)
-- [#26](https://github.com/Primex-Tech/Primus/issues/26) — Add hourly/daily uptime rollups for long-term history _(`hard`)
 - [#27](https://github.com/Primex-Tech/Primus/issues/27) — Add database backup and restore CLI commands _(`medium`)
 - [#87](https://github.com/Primex-Tech/Primus/issues/87) — Add graceful shutdown draining to the scheduler _(`medium`)
-- [#90](https://github.com/Primex-Tech/Primus/issues/90) — Add migration rollback tests _(`medium`)
 - [#147](https://github.com/Primex-Tech/Primus/issues/147) — Add DST- and timezone-correct scheduling tests _(`medium`)
 - [#170](https://github.com/Primex-Tech/Primus/issues/170) — Test scheduler failover between instances _(`medium`)
 - [#186](https://github.com/Primex-Tech/Primus/issues/186) — Implement idempotent apply with dry-run and pruning _(`hard`)
 
 ### Security
 
-- [#6](https://github.com/Primex-Tech/Primus/issues/6) — Add per-monitor HTTP authentication (Basic and Bearer) _(`hard`)
 - [#60](https://github.com/Primex-Tech/Primus/issues/60) — Add account lockout after repeated failed logins _(`medium`)
-- [#62](https://github.com/Primex-Tech/Primus/issues/62) — Add email verification on registration _(`hard`)
 - [#68](https://github.com/Primex-Tech/Primus/issues/68) — Replace inline-style CSP allowance with nonces _(`medium`)
 - [#69](https://github.com/Primex-Tech/Primus/issues/69) — Add trusted proxy and HSTS configuration _(`medium`)
-- [#70](https://github.com/Primex-Tech/Primus/issues/70) — Add dependency vulnerability scanning to CI _(`easy`)
-- [#71](https://github.com/Primex-Tech/Primus/issues/71) — Add secret scanning to CI _(`easy`)
-- [#72](https://github.com/Primex-Tech/Primus/issues/72) — Add automated tests for security headers _(`easy`)
-- [#82](https://github.com/Primex-Tech/Primus/issues/82) — Add rate limiting for the API _(`medium`)
 - [#107](https://github.com/Primex-Tech/Primus/issues/107) — Add proxy support for outbound checks _(`hard`)
 - [#111](https://github.com/Primex-Tech/Primus/issues/111) — Add per-target politeness rate limiting _(`medium`)
 - [#120](https://github.com/Primex-Tech/Primus/issues/120) — Add team invitations and member management _(`hard`)
@@ -181,10 +186,6 @@ _Active issues: 21 · Deferred ideas: 171._
 - [#83](https://github.com/Primex-Tech/Primus/issues/83) — Document an API error catalogue _(`medium`)
 - [#84](https://github.com/Primex-Tech/Primus/issues/84) — Publish a Python client SDK _(`hard`)
 
-### Observability
-
-- [#78](https://github.com/Primex-Tech/Primus/issues/78) — Add request IDs and correlation to logs _(`medium`)
-
 ### Ui
 
 - [#49](https://github.com/Primex-Tech/Primus/issues/49) — Add a public read-only status page _(`hard`)
@@ -202,7 +203,6 @@ _Active issues: 21 · Deferred ideas: 171._
 ### Testing
 
 - [#54](https://github.com/Primex-Tech/Primus/issues/54) — Improve accessibility and add automated a11y tests _(`medium`)
-- [#91](https://github.com/Primex-Tech/Primus/issues/91) — Add a coverage gate to CI _(`easy`)
 - [#92](https://github.com/Primex-Tech/Primus/issues/92) — Add property-based tests for validators using Hypothesis _(`medium`)
 - [#93](https://github.com/Primex-Tech/Primus/issues/93) — Add mutation testing configuration _(`medium`)
 - [#96](https://github.com/Primex-Tech/Primus/issues/96) — Add API contract tests _(`medium`)
