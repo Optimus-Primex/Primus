@@ -50,6 +50,28 @@ jobs:
           flask db upgrade
           python -c "import sqlite3; print(sorted(r[0] for r in sqlite3.connect('ci-migrate.db').execute(\"select name from sqlite_master where type='table'\")))"
 
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-dev.txt
+
+      - name: Dependency audit (pip-audit)
+        run: pip-audit -r requirements.txt
+
+      - name: Static analysis (bandit)
+        run: bandit -r primus -q
+
   docker:
     name: Docker build
     runs-on: ubuntu-latest

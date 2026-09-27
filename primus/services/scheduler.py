@@ -74,9 +74,11 @@ class Scheduler:
     def dispatch_due(self) -> list[int]:
         with self.app.app_context():
             monitor_ids = self.claim_due_monitors()
+        executor = self._executor
+        if executor is None:
+            raise RuntimeError("Scheduler is not running; call start() first")
         for monitor_id in monitor_ids:
-            assert self._executor is not None
-            self._executor.submit(self.run_job, monitor_id)
+            executor.submit(self.run_job, monitor_id)
         return monitor_ids
 
     def run_once(self) -> list[int]:

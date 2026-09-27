@@ -40,9 +40,11 @@ def perform_check(
 ) -> CheckResult:
     """Perform a single HTTP request for ``monitor`` and classify the result."""
 
-    hostname = urlparse(monitor.url).hostname
+    parsed = urlparse(monitor.url)
+    if parsed.scheme.lower() not in ("http", "https"):
+        return CheckResult(False, None, None, _truncate(f"Unsupported scheme: {parsed.scheme!r}"))
     try:
-        assert_public_host(hostname, allow_private)
+        assert_public_host(parsed.hostname, allow_private)
     except ValidationError as exc:
         return CheckResult(False, None, None, _truncate(str(exc)))
 
@@ -54,7 +56,10 @@ def perform_check(
 
     start = time.perf_counter()
     try:
-        with urlrequest.urlopen(request, timeout=monitor.timeout_seconds) as response:
+        # Scheme is restricted to http/https above and the host is SSRF-checked.
+        with urlrequest.urlopen(  # nosec B310
+            request, timeout=monitor.timeout_seconds
+        ) as response:
             latency = round((time.perf_counter() - start) * 1000, 2)
             code = response.getcode()
             return _classify(monitor.expected_status, code, latency)
