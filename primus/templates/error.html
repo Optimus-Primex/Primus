@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ code }}{% endblock %}
+{% block content %}
+<section class="empty">
+  <h1>{{ code }} — {{ message }}</h1>
+  <p class="muted">{{ description }}</p>
+  <a class="button" href="{{ url_for('dashboard.index') }}">Back to dashboard</a>
+</section>
+{% endblock %}

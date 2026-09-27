@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Primus{% endblock %} · Primus</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="{{ url_for('dashboard.index') }}">Primus<span class="brand-dot">.</span></a>
+      <nav class="nav">
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('dashboard.index') }}">Monitors</a>
+          <a href="{{ url_for('dashboard.new_monitor') }}">New monitor</a>
+          <a href="{{ url_for('auth.account') }}">Account</a>
+          <form action="{{ url_for('auth.logout') }}" method="post" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="link-button">Sign out</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}">Sign in</a>
+          <a href="{{ url_for('auth.register') }}" class="button button-small">Register</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for category, message in messages %}
+            <li class="flash flash-{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="wrap footer">
+    <span>Primus — self-hosted uptime &amp; endpoint monitoring.</span>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Account{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Account</h1>
+  <dl class="kv">
+    <dt>Username</dt><dd>{{ user.username }}</dd>
+    <dt>Email</dt><dd>{{ user.email }}</dd>
+  </dl>
+  <p class="muted">
+    Use the API token below to authenticate machine clients with the
+    <code>Authorization: Bearer &lt;token&gt;</code> header.
+  </p>
+  <pre class="token" aria-label="API token">{{ user.api_token }}</pre>
+  <form method="post" action="{{ url_for('auth.rotate_token') }}" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="button button-danger">Rotate token</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ monitor.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ monitor.name }}
+      {% set status = monitor.last_status or 'pending' %}
+      <span class="badge badge-{{ status }}">{{ status }}</span>
+      {% if not monitor.enabled %}<span class="badge badge-paused">paused</span>{% endif %}
+    </h1>
+    <p class="mono muted">{{ monitor.method }} {{ monitor.url }}</p>
+  </div>
+  <div class="page-actions">
+    <form method="post" action="{{ url_for('dashboard.run_check', monitor_id=monitor.id) }}" class="inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="button">Run check</button>
+    </form>
+    <a class="button button-secondary" href="{{ url_for('dashboard.edit_monitor', monitor_id=monitor.id) }}">Edit</a>
+    <form method="post" action="{{ url_for('dashboard.toggle_monitor', monitor_id=monitor.id) }}" class="inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="button button-secondary">{{ 'Pause' if monitor.enabled else 'Enable' }}</button>
+    </form>
+    <form method="post" action="{{ url_for('dashboard.delete_monitor', monitor_id=monitor.id) }}"
+          class="inline" data-confirm="Delete this monitor and all its history?">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="button button-danger">Delete</button>
+    </form>
+  </div>
+</div>
+
+<section class="stats">
+  <div class="stat"><span class="stat-value">{{ uptime if uptime is not none else '—' }}{% if uptime is not none %}%{% endif %}</span><span class="stat-label">Uptime (last 100)</span></div>
+  <div class="stat"><span class="stat-value">{{ monitor.last_latency_ms if monitor.last_latency_ms is not none else '—' }}</span><span class="stat-label">Latency (ms)</span></div>
+  <div class="stat"><span class="stat-value">{{ monitor.last_status_code if monitor.last_status_code is not none else '—' }}</span><span class="stat-label">Status code</span></div>
+  <div class="stat"><span class="stat-value">{{ monitor.consecutive_failures }}</span><span class="stat-label">Consecutive failures</span></div>
+  <div class="stat"><span class="stat-value">{{ monitor.interval_seconds }}s</span><span class="stat-label">Interval</span></div>
+</section>
+
+<section class="card">
+  <h2>Latency (last 50 checks)</h2>
+  <canvas id="latencyChart" width="900" height="220"
+          data-monitor-id="{{ monitor.id }}"
+          data-checks-url="{{ url_for('api.list_checks', monitor_id=monitor.id) }}"></canvas>
+  <noscript><p class="muted">Enable JavaScript to view the latency chart.</p></noscript>
+</section>
+
+<section class="card">
+  <h2>Recent checks</h2>
+  {% if checks %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr><th>Time</th><th>Result</th><th>Status</th><th>Latency</th><th>Error</th></tr>
+      </thead>
+      <tbody>
+        {% for check in checks %}
+        <tr>
+          <td>{{ check.checked_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          <td><span class="badge badge-{{ 'up' if check.success else 'down' }}">{{ 'up' if check.success else 'down' }}</span></td>
+          <td>{{ check.status_code if check.status_code is not none else '—' }}</td>
+          <td>{{ check.latency_ms if check.latency_ms is not none else '—' }}</td>
+          <td class="ellipsis" title="{{ check.error or '' }}">{{ check.error or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="muted">No checks recorded yet.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Incidents</h2>
+  {% if incidents %}
+    <ul class="incidents">
+      {% for incident in incidents %}
+        <li class="incident incident-{{ incident.status }}">
+          <div class="incident-head">
+            <span class="badge badge-{{ 'down' if incident.is_open else 'up' }}">{{ incident.status }}</span>
+            <span class="muted">{{ incident.started_at.strftime('%Y-%m-%d %H:%M') }}
+              {% if incident.resolved_at %} → {{ incident.resolved_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}</span>
+            <span class="muted">{{ incident.duration_seconds }}s</span>
+          </div>
+          <p>{{ incident.cause or 'No cause recorded.' }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">No incidents recorded. </p>
+  {% endif %}
+</section>
+
+<script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+<script src="{{ url_for('static', filename='js/detail.js') }}" defer></script>
+{% endblock %}

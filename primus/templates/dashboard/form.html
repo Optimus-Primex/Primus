@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit monitor' if monitor else 'New monitor' }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>{{ 'Edit monitor' if monitor else 'New monitor' }}</h1>
+  {% set val = form or {} %}
+  <form method="post"
+        action="{{ url_for('dashboard.update_monitor', monitor_id=monitor.id) if monitor else url_for('dashboard.create_monitor') }}"
+        class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <label for="name">Name</label>
+    <input id="name" name="name" type="text" required maxlength="120"
+           value="{{ val.name if val.name is defined else (monitor.name if monitor else '') }}">
+
+    <label for="url">URL</label>
+    <input id="url" name="url" type="url" required maxlength="2048"
+           placeholder="https://example.com/health"
+           value="{{ val.url if val.url is defined else (monitor.url if monitor else '') }}">
+
+    <div class="grid-2">
+      <div>
+        <label for="method">Method</label>
+        {% set current_method = val.method if val.method is defined else (monitor.method if monitor else 'GET') %}
+        <select id="method" name="method">
+          <option value="GET" {% if current_method == 'GET' %}selected{% endif %}>GET</option>
+          <option value="HEAD" {% if current_method == 'HEAD' %}selected{% endif %}>HEAD</option>
+        </select>
+      </div>
+      <div>
+        <label for="expected_status">Expected status</label>
+        <input id="expected_status" name="expected_status" type="number" min="100" max="599"
+               value="{{ val.expected_status if val.expected_status is defined else (monitor.expected_status if monitor else 200) }}">
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
+        <label for="timeout_seconds">Timeout (seconds)</label>
+        <input id="timeout_seconds" name="timeout_seconds" type="number" min="1" max="{{ config['PRIMUS_MAX_TIMEOUT'] }}"
+               value="{{ val.timeout_seconds if val.timeout_seconds is defined else (monitor.timeout_seconds if monitor else config['PRIMUS_DEFAULT_TIMEOUT']) }}">
+      </div>
+      <div>
+        <label for="interval_seconds">Interval (seconds)</label>
+        <input id="interval_seconds" name="interval_seconds" type="number"
+               min="{{ config['PRIMUS_MIN_INTERVAL'] }}" max="{{ config['PRIMUS_MAX_INTERVAL'] }}"
+               value="{{ val.interval_seconds if val.interval_seconds is defined else (monitor.interval_seconds if monitor else config['PRIMUS_MIN_INTERVAL'] * 10) }}">
+      </div>
+    </div>
+
+    {% set is_enabled = (val.enabled if val.enabled is defined else (monitor.enabled if monitor else True)) %}
+    <label class="checkbox">
+      <input type="checkbox" name="enabled" {% if is_enabled %}checked{% endif %}> Enabled
+    </label>
+
+    <div class="form-actions">
+      <button type="submit" class="button">{{ 'Save changes' if monitor else 'Create monitor' }}</button>
+      <a class="link-button" href="{{ url_for('dashboard.monitor_detail', monitor_id=monitor.id) if monitor else url_for('dashboard.index') }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

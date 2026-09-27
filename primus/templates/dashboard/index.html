@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Monitors{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Monitors</h1>
+  <a class="button" href="{{ url_for('dashboard.new_monitor') }}">New monitor</a>
+</div>
+
+<section class="stats">
+  <div class="stat"><span class="stat-value">{{ summary.total }}</span><span class="stat-label">Total</span></div>
+  <div class="stat stat-up"><span class="stat-value">{{ summary.up }}</span><span class="stat-label">Up</span></div>
+  <div class="stat stat-down"><span class="stat-value">{{ summary.down }}</span><span class="stat-label">Down</span></div>
+  <div class="stat"><span class="stat-value">{{ summary.pending }}</span><span class="stat-label">Pending</span></div>
+  <div class="stat"><span class="stat-value">{{ summary.open_incidents }}</span><span class="stat-label">Open incidents</span></div>
+</section>
+
+{% if monitors %}
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Status</th>
+          <th>Name</th>
+          <th>URL</th>
+          <th>Uptime</th>
+          <th>Last check</th>
+          <th class="actions-col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for monitor in monitors %}
+        <tr class="{% if not monitor.enabled %}row-disabled{% endif %}">
+          <td>
+            {% set status = monitor.last_status or 'pending' %}
+            <span class="badge badge-{{ status }}" title="{{ status }}">{{ status }}</span>
+          </td>
+          <td><a href="{{ url_for('dashboard.monitor_detail', monitor_id=monitor.id) }}">{{ monitor.name }}</a></td>
+          <td class="mono ellipsis" title="{{ monitor.url }}">{{ monitor.url }}</td>
+          <td>{{ monitor.uptime_percentage() if monitor.uptime_percentage() is not none else '—' }}{% if monitor.uptime_percentage() is not none %}%{% endif %}</td>
+          <td>{{ monitor.last_checked_at.strftime('%Y-%m-%d %H:%M') if monitor.last_checked_at else 'never' }}</td>
+          <td>
+            <form method="post" action="{{ url_for('dashboard.run_check', monitor_id=monitor.id) }}" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="link-button">Check</button>
+            </form>
+            <form method="post" action="{{ url_for('dashboard.toggle_monitor', monitor_id=monitor.id) }}" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="link-button">{{ 'Pause' if monitor.enabled else 'Enable' }}</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="empty">
+    <h2>No monitors yet</h2>
+    <p class="muted">Create your first monitor to start tracking uptime.</p>
+    <a class="button" href="{{ url_for('dashboard.new_monitor') }}">Create monitor</a>
+  </div>
+{% endif %}
+{% endblock %}
