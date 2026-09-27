@@ -187,6 +187,10 @@ Contributions are welcome. Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) and
 
 Please report vulnerabilities privately — see [`SECURITY.md`](SECURITY.md).
 
+See [`docs/security-review.md`](docs/security-review.md) and
+[`docs/performance-review.md`](docs/performance-review.md) for the latest
+reviews (method, findings, fixes).
+
 ## License
 
 [MIT](LICENSE) © 2026 Primex-Tech
