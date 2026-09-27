@@ -1,0 +1,19 @@
+services:
+  web:
+    build: .
+    environment:
+      PRIMUS_ENV: production
+      PRIMUS_SECRET_KEY: ${PRIMUS_SECRET_KEY:?set PRIMUS_SECRET_KEY in your environment}
+      PRIMUS_DATABASE_URL: sqlite:////data/primus.db
+      PRIMUS_ENABLE_SCHEDULER: "1"
+      PRIMUS_ALLOW_REGISTRATION: "1"
+      # Set to 1 only when exposing Primus over HTTPS behind a proxy.
+      PRIMUS_COOKIE_SECURE: "0"
+    ports:
+      - "8000:8000"
+    volumes:
+      - primus-data:/data
+    restart: unless-stopped
+
+volumes:
+  primus-data:
