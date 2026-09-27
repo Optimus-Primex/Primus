@@ -12,12 +12,12 @@ _Active issues: 41 · Deferred ideas: 151._
 - [#3](https://github.com/Primex-Tech/Primus/issues/3) — Add response body assertions (contains / regex) to checks _(`medium`)
 - [#4](https://github.com/Primex-Tech/Primus/issues/4) — Support per-monitor custom request headers _(`medium`)
 - [#5](https://github.com/Primex-Tech/Primus/issues/5) — Add POST/PUT checks with a JSON request body _(`medium`)
-- [#7](https://github.com/Primex-Tech/Primus/issues/7) — Add JSON-path assertions for API monitoring _(`hard`)
+- [#7](https://github.com/Primex-Tech/Primus/issues/7) — Add JSON-path assertions for API monitoring _(`medium`)
 - [#8](https://github.com/Primex-Tech/Primus/issues/8) — Add tags/labels to monitors and filtering _(`medium`)
 - [#15](https://github.com/Primex-Tech/Primus/issues/15) — Add TLS/SSL certificate expiry monitoring _(`hard`)
-- [#16](https://github.com/Primex-Tech/Primus/issues/16) — Add TCP port monitoring _(`hard`)
-- [#17](https://github.com/Primex-Tech/Primus/issues/17) — Add ICMP/ping monitoring _(`hard`)
-- [#18](https://github.com/Primex-Tech/Primus/issues/18) — Add DNS record monitoring _(`hard`)
+- [#16](https://github.com/Primex-Tech/Primus/issues/16) — Add TCP port monitoring _(`medium`)
+- [#17](https://github.com/Primex-Tech/Primus/issues/17) — Add ICMP/ping monitoring _(`medium`)
+- [#18](https://github.com/Primex-Tech/Primus/issues/18) — Add DNS record monitoring _(`medium`)
 - [#19](https://github.com/Primex-Tech/Primus/issues/19) — Add multi-step HTTP transaction checks _(`hard`)
 - [#25](https://github.com/Primex-Tech/Primus/issues/25) — Add configurable check result retention and pruning _(`medium`)
 - [#102](https://github.com/Primex-Tech/Primus/issues/102) — Add composite monitors with dependencies _(`hard`)
@@ -45,7 +45,7 @@ _Active issues: 41 · Deferred ideas: 151._
 
 - [#6](https://github.com/Primex-Tech/Primus/issues/6) — Add per-monitor HTTP authentication (Basic and Bearer) _(`hard`)
 - [#59](https://github.com/Primex-Tech/Primus/issues/59) — Add rate limiting to login and registration _(`medium`)
-- [#61](https://github.com/Primex-Tech/Primus/issues/61) — Add password reset via email _(`hard`)
+- [#61](https://github.com/Primex-Tech/Primus/issues/61) — Add password reset via email _(`medium`)
 - [#62](https://github.com/Primex-Tech/Primus/issues/62) — Add email verification on registration _(`hard`)
 - [#67](https://github.com/Primex-Tech/Primus/issues/67) — Harden the SSRF guard with DNS pinning _(`hard`)
 - [#70](https://github.com/Primex-Tech/Primus/issues/70) — Add dependency vulnerability scanning to CI _(`easy`)
@@ -62,7 +62,7 @@ _Active issues: 41 · Deferred ideas: 151._
 
 - [#78](https://github.com/Primex-Tech/Primus/issues/78) — Add request IDs and correlation to logs _(`medium`)
 - [#79](https://github.com/Primex-Tech/Primus/issues/79) — Add optional structured JSON logging _(`medium`)
-- [#80](https://github.com/Primex-Tech/Primus/issues/80) — Add a Prometheus /metrics endpoint _(`hard`)
+- [#80](https://github.com/Primex-Tech/Primus/issues/80) — Add a Prometheus /metrics endpoint _(`medium`)
 
 ### Testing
 
