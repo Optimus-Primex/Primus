@@ -4,9 +4,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 
-Primus is a self-hosted uptime and endpoint monitor. It periodically sends HTTP
-requests to the URLs you care about, records the result, tracks uptime and
-latency over time, and opens an **incident** when an endpoint starts failing.
+Primus is a self-hosted uptime and endpoint monitor. It periodically checks the
+endpoints you care about — HTTP(S) services as well as **Stellar Horizon** and
+**Soroban RPC** nodes — records the result, tracks uptime and latency over time,
+and opens an **incident** when an endpoint starts failing.
 
 It ships with a web dashboard, a token-authenticated REST API, a background
 scheduler, a CLI, database migrations, a test suite, and CI — so you can run it
@@ -23,6 +24,10 @@ Python/Flask codebase you can audit in an afternoon.
 
 - **HTTP(S) monitoring** with `GET`/`HEAD`, configurable timeout, expected
   status code, and interval.
+- **Pluggable check types** — HTTP(S) by default, plus built-in **Stellar
+  Horizon** (ledger lag), **Soroban RPC** (health + passphrase), **Soroban
+  contract** event monitoring, and Stellar account/asset checks. See
+  [`docs/stellar.md`](docs/stellar.md).
 - **Status history** — every check is stored with status code, latency, and the
   error message when it fails.
 - **Incident lifecycle** — an incident opens after N consecutive failures
@@ -73,7 +78,9 @@ data model.
 | Auth       | Flask-Login sessions + bearer tokens    |
 | Forms/CSRF | Flask-WTF / CSRFProtect                 |
 | Server     | Gunicorn                                |
-| Tests/CI   | pytest, ruff, GitHub Actions            |
+| Stellar    | Horizon REST + Soroban JSON-RPC (stdlib) |
+| Contract   | Soroban (Rust, `soroban-sdk`)           |
+| Tests/CI   | pytest, ruff, cargo test, GitHub Actions |
 | Packaging  | Docker, docker-compose                  |
 
 ## Quick start
@@ -170,13 +177,23 @@ primus/
 ├── auth/                # session auth blueprint
 ├── dashboard/           # server-rendered UI blueprint
 ├── services/            # checker, incidents, scheduler, validators
+│   └── check_types/     # HTTP + Stellar/Soroban check-type plugins
 ├── templates/           # Jinja templates
 └── static/              # CSS and vanilla JS
+contracts/               # Soroban smart contracts (Rust)
 migrations/              # Alembic / Flask-Migrate
 tests/                   # pytest suite
-docs/                    # architecture and API docs
+docs/                    # architecture, API and Stellar docs
 scripts/                 # developer setup helpers
 ```
+
+## Stellar & Soroban
+
+Primus can monitor Stellar Horizon endpoints, Soroban RPC nodes, Soroban smart
+contracts, accounts, and assets — and it ships an on-chain Soroban registry
+contract. See [`docs/stellar.md`](docs/stellar.md) for configuration and
+examples, and [`contracts/primus-registry`](contracts/primus-registry) for the
+contract.
 
 ## Contributing
 

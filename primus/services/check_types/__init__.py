@@ -58,8 +58,10 @@ def default_check_type() -> CheckType:
 
 def _load_builtin_types() -> None:
     from .http import HttpCheckType
+    from .stellar import register_stellar_types
 
     register(HttpCheckType())
+    register_stellar_types(register)
 
 
 _load_builtin_types()

@@ -22,6 +22,10 @@ instance/
 *.pem
 *.key
 
+# --- Rust / Soroban ---------------------------------------------------
+target/
+test_snapshots/
+
 # --- Tooling / caches -------------------------------------------------
 .pytest_cache/
 .ruff_cache/
