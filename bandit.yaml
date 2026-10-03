@@ -1,0 +1,8 @@
+# Primus Bandit configuration.
+#
+# B105 (hardcoded_password_string) flags the Stellar network passphrases as
+# possible hardcoded passwords. Those values are *public network identifiers*
+# (for example "Public Global Stellar Network ; September 2015"), not secrets,
+# and the "verify_passphrase" option is a boolean. Skip B105 only.
+skips:
+  - B105
