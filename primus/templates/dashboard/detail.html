@@ -8,7 +8,7 @@
       <span class="badge badge-{{ status }}">{{ status }}</span>
       {% if not monitor.enabled %}<span class="badge badge-paused">paused</span>{% endif %}
     </h1>
-    <p class="mono muted">{{ monitor.method }} {{ monitor.url }}</p>
+    <p class="mono muted">{{ monitor.type }} · {{ monitor.method }} {{ monitor.url }}</p>
   </div>
   <div class="page-actions">
     <form method="post" action="{{ url_for('dashboard.run_check', monitor_id=monitor.id) }}" class="inline">

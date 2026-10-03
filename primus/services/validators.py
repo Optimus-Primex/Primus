@@ -92,6 +92,10 @@ def validate_monitor_payload(data: dict, config, partial: bool = False) -> dict:
     :class:`ValidationError` on the first problem (the API surfaces the message).
     """
 
+    # Imported lazily to avoid a circular import: the built-in check types
+    # import the SSRF helpers from this module.
+    from .check_types import DEFAULT_TYPE, get_check_type
+
     if not isinstance(data, dict):
         raise ValidationError("payload must be a JSON object")
 
@@ -105,10 +109,35 @@ def validate_monitor_payload(data: dict, config, partial: bool = False) -> dict:
         "enabled": True,
     }
 
+    # Resolve the check type first: it decides whether a URL is required and
+    # how the type-specific configuration is validated.
+    requested_type = str(data.get("type") or DEFAULT_TYPE).strip().lower()
+    check_type = get_check_type(requested_type)
+    if check_type is None:
+        raise ValidationError(f"unknown monitor type: {requested_type!r}")
+
     if not partial:
-        for field in ("name", "url"):
-            if not data.get(field):
-                raise ValidationError(f"{field} is required")
+        if not data.get("name"):
+            raise ValidationError("name is required")
+        if check_type.requires_url and not data.get("url"):
+            raise ValidationError("url is required")
+
+    if "type" in data or not partial:
+        cleaned["type"] = check_type.slug
+
+    if "type_config" in data:
+        raw_config = data["type_config"]
+        if raw_config is None:
+            raw_config = {}
+        if not isinstance(raw_config, dict):
+            raise ValidationError("type_config must be a JSON object")
+        cleaned["type_config"] = check_type.validate_config(raw_config, config)
+    elif not partial:
+        cleaned["type_config"] = check_type.validate_config({}, config)
+    elif "type" in data:
+        # Type changed without supplying a new config: fall back to defaults
+        # rather than carrying over configuration from the old type.
+        cleaned["type_config"] = check_type.validate_config({}, config)
 
     if "name" in data:
         name = str(data["name"]).strip()

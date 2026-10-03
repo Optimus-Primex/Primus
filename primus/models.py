@@ -89,7 +89,12 @@ class Monitor(db.Model):
         index=True,
     )
     name = db.Column(db.String(120), nullable=False)
-    url = db.Column(db.String(2048), nullable=False)
+    #: Registered check type slug (see ``primus.services.check_types``).
+    type = db.Column(db.String(32), nullable=False, default="http")
+    #: Type-specific configuration (JSON object); shape depends on ``type``.
+    type_config = db.Column(db.JSON, nullable=False, default=dict)
+    #: Target URL. Required by types that declare ``requires_url`` (e.g. http).
+    url = db.Column(db.String(2048), nullable=True)
     method = db.Column(db.String(8), nullable=False, default="GET")
     expected_status = db.Column(db.Integer, nullable=False, default=200)
     timeout_seconds = db.Column(db.Integer, nullable=False, default=10)
@@ -202,6 +207,8 @@ class Monitor(db.Model):
         return {
             "id": self.id,
             "name": self.name,
+            "type": self.type,
+            "type_config": self.type_config or {},
             "url": self.url,
             "method": self.method,
             "expected_status": self.expected_status,
@@ -236,6 +243,8 @@ class Check(db.Model):
     status_code = db.Column(db.Integer, nullable=True)
     latency_ms = db.Column(db.Float, nullable=True)
     error = db.Column(db.String(512), nullable=True)
+    #: Type-specific metrics captured by the check (e.g. Stellar ledger lag).
+    detail = db.Column(db.JSON, nullable=True)
     checked_at = db.Column(db.DateTime, nullable=False, default=utcnow, index=True)
 
     monitor = db.relationship("Monitor", back_populates="checks")
@@ -250,6 +259,7 @@ class Check(db.Model):
             "status_code": self.status_code,
             "latency_ms": self.latency_ms,
             "error": self.error,
+            "detail": self.detail,
             "checked_at": _iso(self.checked_at),
         }
 

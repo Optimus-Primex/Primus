@@ -50,6 +50,7 @@ def record_check(monitor, result, failure_threshold: int = 1, now=None):
         status_code=result.status_code,
         latency_ms=result.latency_ms,
         error=result.error,
+        detail=getattr(result, "detail", None),
         checked_at=now,
     )
     db.session.add(check)

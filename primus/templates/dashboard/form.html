@@ -13,6 +13,16 @@
     <input id="name" name="name" type="text" required maxlength="120"
            value="{{ val.name if val.name is defined else (monitor.name if monitor else '') }}">
 
+    {% set current_type = val.type if val.type is defined else (monitor.type if monitor else 'http') %}
+    <label for="type">Type</label>
+    <select id="type" name="type">
+      {% for check_type in check_types %}
+        <option value="{{ check_type.slug }}" {% if current_type == check_type.slug %}selected{% endif %}>
+          {{ check_type.label }}{% if check_type.description %} — {{ check_type.description }}{% endif %}
+        </option>
+      {% endfor %}
+    </select>
+
     <label for="url">URL</label>
     <input id="url" name="url" type="url" required maxlength="2048"
            placeholder="https://example.com/health"
@@ -47,6 +57,12 @@
                value="{{ val.interval_seconds if val.interval_seconds is defined else (monitor.interval_seconds if monitor else config['PRIMUS_MIN_INTERVAL'] * 10) }}">
       </div>
     </div>
+
+    {% set current_config = val.type_config if val.type_config is defined else (monitor.type_config if monitor else {}) %}
+    <label for="type_config">Type configuration (JSON)</label>
+    <textarea id="type_config" name="type_config" rows="4" spellcheck="false"
+              placeholder="{}">{{ current_config | tojson if current_config is mapping else current_config }}</textarea>
+    <p class="muted">Protocol-specific options, e.g. Stellar network or contract id. Leave empty for defaults.</p>
 
     {% set is_enabled = (val.enabled if val.enabled is defined else (monitor.enabled if monitor else True)) %}
     <label class="checkbox">
