@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from flask import (
     current_app,
     flash,
@@ -22,6 +24,7 @@ from ..models import (
     Incident,
     Monitor,
 )
+from ..services.check_types import DEFAULT_TYPE, available_types
 from ..services.checker import check_with_retries
 from ..services.incidents import record_check
 from ..services.validators import ValidationError, validate_monitor_payload
@@ -52,7 +55,7 @@ def index():
 @bp.get("/monitors/new")
 @login_required
 def new_monitor():
-    return render_template("dashboard/form.html", monitor=None)
+    return render_template("dashboard/form.html", monitor=None, check_types=available_types())
 
 
 @bp.post("/monitors")
@@ -62,7 +65,15 @@ def create_monitor():
         cleaned = validate_monitor_payload(_form_payload(), current_app.config)
     except ValidationError as exc:
         flash(str(exc), "error")
-        return render_template("dashboard/form.html", monitor=None, form=request.form), 400
+        return (
+            render_template(
+                "dashboard/form.html",
+                monitor=None,
+                form=request.form,
+                check_types=available_types(),
+            ),
+            400,
+        )
 
     monitor = Monitor(
         user_id=current_user.id,
@@ -105,7 +116,7 @@ def monitor_detail(monitor_id):
 @login_required
 def edit_monitor(monitor_id):
     monitor = _owned_or_404(monitor_id)
-    return render_template("dashboard/form.html", monitor=monitor)
+    return render_template("dashboard/form.html", monitor=monitor, check_types=available_types())
 
 
 @bp.post("/monitors/<int:monitor_id>")
@@ -117,7 +128,12 @@ def update_monitor(monitor_id):
     except ValidationError as exc:
         flash(str(exc), "error")
         return (
-            render_template("dashboard/form.html", monitor=monitor, form=request.form),
+            render_template(
+                "dashboard/form.html",
+                monitor=monitor,
+                form=request.form,
+                check_types=available_types(),
+            ),
             400,
         )
 
@@ -177,8 +193,9 @@ def run_check(monitor_id):
 # -- helpers -------------------------------------------------------------
 def _form_payload() -> dict:
     form = request.form
-    return {
+    payload = {
         "name": form.get("name", ""),
+        "type": form.get("type", DEFAULT_TYPE),
         "url": form.get("url", ""),
         "method": form.get("method", "GET"),
         "expected_status": form.get("expected_status", 200),
@@ -190,6 +207,13 @@ def _form_payload() -> dict:
         ),
         "enabled": form.get("enabled") == "on",
     }
+    raw_config = form.get("type_config", "").strip()
+    if raw_config:
+        try:
+            payload["type_config"] = json.loads(raw_config)
+        except ValueError as exc:
+            raise ValidationError("type_config must be valid JSON") from exc
+    return payload
 
 
 def _owned_or_404(monitor_id: int) -> Monitor:
