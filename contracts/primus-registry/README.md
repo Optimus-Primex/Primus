@@ -26,9 +26,17 @@ pub struct Status {
 
 ```bash
 cd contracts/primus-registry
-cargo test                                                  # unit tests (soroban-sdk testutils)
-cargo build --release --target wasm32-unknown-unknown       # → target/.../primus_registry.wasm
+
+cargo test              # unit tests (soroban-sdk testutils)
+
+stellar contract build  # deployable wasm (requires stellar-cli v25.2.0+)
 ```
+
+`stellar contract build` writes `target/wasm32v1-none/release/primus_registry.wasm`.
+A plain `cargo build --release --target wasm32v1-none` also works as a compile
+check when you set `SOROBAN_SDK_BUILD_SYSTEM_SUPPORTS_SPEC_SHAKING_V2=1`
+(soroban-sdk rejects `wasm32-unknown-unknown` on Rust 1.84+ and requires
+stellar-cli to do spec shaking).
 
 On Windows, `cargo test` needs the MSVC toolchain (or build the tests with
 `crate-type = ["rlib"]` under the GNU toolchain to work around a known mingw
@@ -39,7 +47,7 @@ cdylib export limit). CI runs on Linux.
 ```bash
 stellar contract build
 stellar contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/primus_registry.wasm \
+  --wasm target/wasm32v1-none/release/primus_registry.wasm \
   --network testnet \
   --source <your-identity>
 ```

@@ -98,5 +98,11 @@ jobs:
       - name: Test contract
         run: cargo test
 
-      - name: Build wasm
+      # Compile check for the wasm artefact. Release/deployable wasm should be
+      # produced with `stellar contract build` (stellar-cli handles spec
+      # shaking); the flag below tells the SDK that check is done, so a plain
+      # `cargo build` can at least verify the contract compiles for wasm.
+      - name: Compile contract to wasm
+        env:
+          SOROBAN_SDK_BUILD_SYSTEM_SUPPORTS_SPEC_SHAKING_V2: "1"
         run: cargo build --release --target wasm32v1-none
