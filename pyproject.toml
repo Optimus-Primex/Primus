@@ -26,6 +26,7 @@ packages = ["primus", "primus.api", "primus.auth", "primus.dashboard", "primus.s
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+pythonpath = ["."]
 markers = ["integration: tests that touch the database"]
 
 [tool.coverage.run]
