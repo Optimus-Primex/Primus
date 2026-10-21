@@ -12,17 +12,20 @@ pip-audit -r requirements.txt
 
 ### 1. Vulnerable pinned dependencies (Medium) — fixed
 
-`pip-audit` reported 4 known advisories in 2 packages:
+`pip-audit` flagged advisories in the pinned set. The first pass covered
+Flask/Werkzeug; a follow-up audit found one more in each:
 
-| Package  | Was     | Advisories                                  | Fixed in |
-| -------- | ------- | ------------------------------------------- | -------- |
-| Flask    | 3.1.1   | PYSEC-2026-2151                             | 3.1.3    |
-| Werkzeug | 3.1.3   | PYSEC-2026-2046, PYSEC-2026-2044, PYSEC-2026-2320 | 3.1.6 |
+| Package       | Was     | Advisories                                           | Fixed in |
+| ------------- | ------- | ---------------------------------------------------- | -------- |
+| Flask         | 3.1.1   | PYSEC-2026-2151                                      | 3.1.3    |
+| Werkzeug      | 3.1.3   | PYSEC-2026-2046, PYSEC-2026-2044, PYSEC-2026-2320     | 3.1.6    |
+| Werkzeug      | 3.1.6   | PYSEC-2026-4312                                      | 3.1.9    |
+| python-dotenv | 1.1.1   | PYSEC-2026-2270                                      | 1.2.2    |
 
-**Fix:** bumped `Flask` to 3.1.3 and `Werkzeug` to 3.1.6 in
-`requirements.txt`. `pip-audit` now reports *"No known vulnerabilities found"*.
-A `security` job was added to CI (`.github/workflows/ci.yml`) running both
-`pip-audit` and `bandit` on every push and pull request.
+**Fix:** `requirements.txt` now pins `Flask` 3.1.3, `Werkzeug` 3.1.9 and
+`python-dotenv` 1.2.2. A `security` job was added to CI
+(`.github/workflows/ci.yml`) running both `pip-audit` and `bandit` on every push
+and pull request.
 
 ### 2. Unchecked URL schemes in the checker (B310, Medium) — fixed
 
