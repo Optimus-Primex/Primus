@@ -1,6 +1,6 @@
 # Primus
 
-[![CI](https://github.com/Primex-Tech/Primus/actions/workflows/ci.yml/badge.svg)](https://github.com/Primex-Tech/Primus/actions/workflows/ci.yml)
+[![CI](https://github.com/Optimus-Primex/Primus/actions/workflows/ci.yml/badge.svg)](https://github.com/Optimus-Primex/Primus/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 
@@ -86,7 +86,7 @@ data model.
 ## Quick start
 
 ```bash
-git clone https://github.com/Primex-Tech/Primus.git
+git clone https://github.com/Optimus-Primex/Primus.git
 cd Primus
 python -m venv .venv
 # Windows: .venv\Scripts\activate
@@ -125,7 +125,7 @@ All configuration is read from environment variables (see `.env.example`).
 | `PRIMUS_DATABASE_URL`           | `sqlite:///dev.db`      | SQLAlchemy database URL.                        |
 | `PRIMUS_ALLOW_REGISTRATION`     | `1`                     | Allow public sign-up.                           |
 | `PRIMUS_ALLOW_PRIVATE_TARGETS`  | `0`                     | Disable the SSRF guard (monitor internal hosts).|
-| `PRIMUS_ENABLE_SCHEDULER`       | `0` / `1` in `.env`     | Run the in-process scheduler.                   |
+| `PRIMUS_ENABLE_SCHEDULER`       | `0`                     | Run the in-process scheduler.                   |
 | `PRIMUS_FAILURE_THRESHOLD`      | `2`                     | Failures before an incident opens.              |
 | `PRIMUS_MIN_INTERVAL`           | `30`                    | Minimum check interval in seconds.              |
 | `PRIMUS_MAX_TIMEOUT`            | `60`                    | Maximum request timeout in seconds.             |

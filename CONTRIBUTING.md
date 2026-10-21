@@ -6,7 +6,7 @@ up a development environment and what we expect from contributions.
 ## Development setup
 
 ```bash
-git clone https://github.com/Primex-Tech/Primus.git
+git clone https://github.com/Optimus-Primex/Primus.git
 cd Primus
 python -m venv .venv
 source .venv/bin/activate     # Windows: .venv\Scripts\activate

@@ -12,7 +12,7 @@ pip-audit -r requirements.txt
 
 ### 1. Vulnerable pinned dependencies (Medium) — fixed
 
-`pip-audit` reported 8 known advisories in 2 packages:
+`pip-audit` reported 4 known advisories in 2 packages:
 
 | Package  | Was     | Advisories                                  | Fixed in |
 | -------- | ------- | ------------------------------------------- | -------- |

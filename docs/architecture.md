@@ -96,7 +96,8 @@ Indexes support the hot paths:
   makes the scheduling logic unit-testable without network access, while
   production passes the real checker.
 - **SQLite by default.** Zero-ops for single-node use. The ORM and migrations
-  are database-agnostic, so PostgreSQL is a `PRIMUS_DATABASE_URL` away.
+  are database-agnostic; install the optional driver with
+  `pip install -e ".[postgres]"` and point `PRIMUS_DATABASE_URL` at PostgreSQL.
 - **In-process scheduler by default, dedicated worker optional.** One process
   with the scheduler enabled is the simple path; `flask primus worker` allows
   web workers to scale independently.

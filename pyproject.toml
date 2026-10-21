@@ -17,11 +17,14 @@ classifiers = [
     "Topic :: System :: Monitoring",
 ]
 
-[project.urls]
-Homepage = "https://github.com/Primex-Tech/Primus"
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.2"]
 
-[tool.setuptools]
-packages = ["primus", "primus.api", "primus.auth", "primus.dashboard", "primus.services"]
+[project.urls]
+Homepage = "https://github.com/Optimus-Primex/Primus"
+
+[tool.setuptools.packages.find]
+include = ["primus*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
