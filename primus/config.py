@@ -66,7 +66,7 @@ class BaseConfig:
     PRIMUS_RETRY_DELAY = env_float("PRIMUS_RETRY_DELAY", 2.0)
     PRIMUS_FAILURE_THRESHOLD = env_int("PRIMUS_FAILURE_THRESHOLD", 2)
     PRIMUS_ALLOW_PRIVATE_TARGETS = env_bool("PRIMUS_ALLOW_PRIVATE_TARGETS", False)
-    PRIMUS_USER_AGENT = "Primus-Uptime-Monitor/1.0 (+https://github.com/)"
+    PRIMUS_USER_AGENT = "Primus-Uptime-Monitor/1.0 (+https://github.com/Optimus-Primex/Primus)"
 
     # --- Scheduler ------------------------------------------------------
     PRIMUS_ENABLE_SCHEDULER = env_bool("PRIMUS_ENABLE_SCHEDULER", False)

@@ -11,10 +11,13 @@ from __future__ import annotations
 import ipaddress
 import re
 import socket
+from urllib import request as urlrequest
+from urllib.error import URLError
 from urllib.parse import urlparse
 
 ALLOWED_METHODS = {"GET", "HEAD"}
 ALLOWED_SCHEMES = {"http", "https"}
+MAX_REDIRECTS = 5
 
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_.-]{3,64}$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
@@ -22,6 +25,40 @@ EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 class ValidationError(ValueError):
     """Raised when untrusted input fails validation."""
+
+
+class PublicOnlyRedirectHandler(urlrequest.HTTPRedirectHandler):
+    """Follow redirects only while every hop stays on a public HTTP(S) host.
+
+    ``urllib`` follows redirects by default, so validating only the original
+    URL would let a permitted public host redirect the checker into loopback or
+    cloud metadata endpoints.  Each redirect target is re-validated here; an
+    unsafe hop aborts the request with :class:`URLError`.
+    """
+
+    def __init__(self, allow_private: bool = False) -> None:
+        super().__init__()
+        self.allow_private = allow_private
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        parsed = urlparse(newurl)
+        if parsed.scheme.lower() not in ALLOWED_SCHEMES:
+            raise URLError(f"redirect to unsupported scheme: {parsed.scheme!r}")
+        if not parsed.hostname:
+            raise URLError("redirect target has no hostname")
+        try:
+            assert_public_host(parsed.hostname, self.allow_private)
+        except ValidationError as exc:
+            raise URLError(f"redirect blocked: {exc}") from exc
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def build_safe_opener(allow_private: bool = False) -> urlrequest.OpenerDirector:
+    """Build an opener that re-applies the SSRF guard on every redirect hop."""
+
+    opener = urlrequest.build_opener(PublicOnlyRedirectHandler(allow_private))
+    opener.max_redirections = MAX_REDIRECTS
+    return opener
 
 
 def assert_public_host(hostname: str, allow_private: bool = False) -> None:

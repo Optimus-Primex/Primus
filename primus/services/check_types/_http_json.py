@@ -14,7 +14,7 @@ from urllib import request as urlrequest
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 
-from ..validators import ValidationError, assert_public_host
+from ..validators import ValidationError, assert_public_host, build_safe_opener
 from .base import DEFAULT_USER_AGENT, truncate
 
 
@@ -55,10 +55,12 @@ def request_json(
 
     request = urlrequest.Request(url, data=body, method=method, headers=headers)
 
+    opener = build_safe_opener(allow_private)
     start = time.perf_counter()
     try:
-        # Scheme is restricted above and the host passed the SSRF check.
-        with urlrequest.urlopen(request, timeout=timeout) as response:  # nosec B310
+        # Scheme is restricted above and the opener re-checks every redirect
+        # target before following it.
+        with opener.open(request, timeout=timeout) as response:  # nosec B310
             raw = response.read()
             code = response.getcode()
     except HTTPError as exc:

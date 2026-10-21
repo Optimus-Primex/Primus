@@ -11,7 +11,7 @@ from urllib import request as urlrequest
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 
-from ..validators import ValidationError, assert_public_host
+from ..validators import ValidationError, assert_public_host, build_safe_opener
 from .base import DEFAULT_USER_AGENT, CheckResult, CheckType, truncate
 
 
@@ -44,10 +44,12 @@ class HttpCheckType(CheckType):
             headers={"User-Agent": user_agent, "Accept": "*/*"},
         )
 
+        opener = build_safe_opener(allow_private)
         start = time.perf_counter()
         try:
-            # Scheme is restricted to http/https above and the host is SSRF-checked.
-            with urlrequest.urlopen(  # nosec B310
+            # Scheme is restricted to http/https above; the opener re-checks
+            # every redirect target before following it.
+            with opener.open(  # nosec B310
                 request, timeout=monitor.timeout_seconds
             ) as response:
                 latency = round((time.perf_counter() - start) * 1000, 2)

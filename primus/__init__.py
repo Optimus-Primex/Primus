@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 
+from dotenv import load_dotenv
 from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 
 from .config import CONFIGS, validate_production
@@ -15,6 +16,9 @@ from .models import User
 def create_app(config_name: str | None = None, config_overrides: dict | None = None) -> Flask:
     """Create and configure a Flask application instance."""
 
+    # Load a local .env file when present (see README quick start). Explicit
+    # environment variables always win over values from the file.
+    load_dotenv()
     config_name = config_name or os.environ.get("PRIMUS_ENV", "development")
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(CONFIGS.get(config_name, CONFIGS["development"]))

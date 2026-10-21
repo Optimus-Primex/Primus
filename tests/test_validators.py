@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+from urllib import request as urlrequest
+from urllib.error import URLError
+
 import pytest
 
 from primus.services.validators import (
+    PublicOnlyRedirectHandler,
     ValidationError,
     assert_public_host,
+    build_safe_opener,
     validate_monitor_payload,
     validate_url,
     validate_user_credentials,
@@ -53,6 +58,24 @@ def test_public_host_guard_blocks_loopback():
 
 def test_public_host_guard_can_be_disabled():
     assert_public_host("127.0.0.1", allow_private=True)
+
+
+def test_redirect_handler_blocks_private_targets():
+    handler = PublicOnlyRedirectHandler(allow_private=False)
+    request = urlrequest.Request("https://example.com/")
+    with pytest.raises(URLError, match="redirect blocked"):
+        handler.redirect_request(request, None, 302, "Found", {}, "http://127.0.0.1/admin")
+
+
+def test_redirect_handler_blocks_non_http_schemes():
+    handler = PublicOnlyRedirectHandler(allow_private=False)
+    request = urlrequest.Request("https://example.com/")
+    with pytest.raises(URLError, match="unsupported scheme"):
+        handler.redirect_request(request, None, 302, "Found", {}, "file:///etc/passwd")
+
+
+def test_safe_opener_sets_a_redirect_limit():
+    assert build_safe_opener().max_redirections == 5
 
 
 def test_validate_monitor_payload_applies_defaults(app):
