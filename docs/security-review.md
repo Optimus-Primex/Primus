@@ -47,7 +47,9 @@ stripped under `python -O`. Replaced with an explicit
 
 - **Secrets:** none hard-coded; configuration comes from environment variables,
   `.env` is git-ignored, and production refuses to start with the default secret
-  key (`config.validate_production`).
+  key (`config.validate_production`). The registry signer secret
+  (`PRIMUS_REGISTRY_SECRET_KEY`) is excluded from settings `repr`, is never
+  logged, and is redacted from publisher error messages.
 - **Authorization:** every monitor/incident query is filtered by the owning
   `user_id`; the API requires a bearer token or an authenticated session.
 - **Injection:** all database access goes through the SQLAlchemy ORM with bound

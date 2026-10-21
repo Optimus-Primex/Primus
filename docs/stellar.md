@@ -81,6 +81,104 @@ reported for a monitor and emits a `StatusReported` event. Use it to publish an
 auditable uptime record on-chain; the `soroban-contract` check type can then
 watch it. See [`contracts/primus-registry/README.md`](../contracts/primus-registry/README.md).
 
+### Contract interface
+
+The publisher calls exactly the contract's `report` function:
+
+```rust
+report(reporter: Address, monitor_id: Symbol, up: bool, latency_ms: u32)
+```
+
+- `reporter` is the configured signer's public key and authorises the call.
+- `monitor_id` is the Primus monitor's numeric id encoded as a Soroban `Symbol`
+  (for example, monitor `7` is published as `Symbol("7")`).
+- `up` comes from the latest stored check (falling back to `Monitor.last_status`).
+- `latency_ms` is the latest check latency, rounded and clamped to a `u32`.
+
+### Build and deploy the contract
+
+Building requires [stellar-cli](https://developers.stellar.org/docs/tools/cli)
+v25.2.0+ and a Rust toolchain:
+
+```bash
+cd contracts/primus-registry
+stellar contract build
+stellar contract deploy \
+  --wasm target/wasm32v1-none/release/primus_registry.wasm \
+  --network testnet \
+  --source <funded-identity>
+```
+
+On testnet you can create a throwaway identity and fund it with Friendbot:
+
+```bash
+stellar keys generate --network testnet primus-publisher
+stellar keys fund primus-publisher --network testnet
+stellar keys address primus-publisher
+```
+
+Copy the deployed contract id (`C...`) into `PRIMUS_REGISTRY_CONTRACT_ID`. Do
+not commit the signer secret; provide it only through the environment.
+
+### Deployed registry (testnet)
+
+A demo instance is live on testnet and was used for the smoke report below:
+
+```
+PRIMUS_REGISTRY_CONTRACT_ID=CDEPU2EKEOCC6EKHHQZVTOVH67VLO2DEYK5VG3CYNWQYY3OUDEMGNDQI
+https://stellar.expert/explorer/testnet/contract/CDEPU2EKEOCC6EKHHQZVTOVH67VLO2DEYK5VG3CYNWQYY3OUDEMGNDQI
+```
+
+- wasm sha256: `0385b9fb46aad6d9899814eabf3332a96130eba4d9a5831909f073bc1f3e6dc0`
+- wasm upload tx: `57417cb5f40244edd309003499ac1ef4499045d4cbb2e49a463324c29457b586`
+- contract deploy tx: `7c9dbf0a4d221a926a1ef797589aae411d10d8794fbaed4e2d8b140af053ca8b`
+- report tx: `593c90095cc5dde11133e7fc63b136f747f04f5454f42156667b9ac1b6b43b32`
+  (success, ledger `5308464`)
+- read back `get_status("proof_1")`:
+  `{"up": true, "latency_ms": 42, "ledger": 5308464, "timestamp": 1792565907}`
+
+The instance is a public testnet registry; reports are authorized by the
+reporter's key, not by a contract admin.
+
+### Publish from Python
+
+The publisher uses the official [`stellar-sdk`](https://pypi.org/project/stellar-sdk/)
+package (pinned in `requirements.txt`, also available as the `stellar` optional
+extra). It loads the signer account, builds an `invokeHostFunction` transaction,
+simulates it via Soroban RPC, prepares/signs it and submits it. The signer secret
+is never included in logs or error messages.
+
+```bash
+# .env (never commit real values)
+PRIMUS_REGISTRY_CONTRACT_ID=C...
+PRIMUS_REGISTRY_SECRET_KEY=S...
+PRIMUS_REGISTRY_NETWORK=testnet
+# Optional; defaults to the public RPC endpoint for the selected network:
+PRIMUS_REGISTRY_RPC_URL=https://soroban-testnet.stellar.org
+```
+
+Then publish the monitor's latest check:
+
+```bash
+flask primus publish-status --monitor-id 7
+# Published monitor 7 status to the registry. Tx hash: ...
+```
+
+To publish automatically after every scheduled check, set
+`PRIMUS_REGISTRY_PUBLISH_ON_CHECK=1`. The hook is **disabled by default**; a
+failed publish is logged but never fails the check or incident state machine.
+
+The command is **stateless**: it returns/prints the transaction hash but does
+not add a database column or outbox table. If you need a durable audit trail,
+run it from cron and capture stdout, or query the contract's `StatusReported`
+events. `soroban-contract` monitors can watch those events directly.
+
+The signer account must exist and hold enough XLM to pay the Soroban resource
+fees. Publishing fails cleanly with a nonzero exit code when configuration is
+missing, the contract id/secret is invalid, simulation rejects the call, or the
+network refuses the transaction.
+
+
 ## Adding a new check type
 
 Subclass `CheckType` (see `primus/services/check_types/base.py`), implement
