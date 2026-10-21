@@ -78,6 +78,15 @@ class BaseConfig:
     PRIMUS_HISTORY_LIMIT = env_int("PRIMUS_HISTORY_LIMIT", 100)
     PRIMUS_MAX_PAGE_SIZE = env_int("PRIMUS_MAX_PAGE_SIZE", 200)
 
+    # --- On-chain registry (optional) -----------------------------------
+    PRIMUS_REGISTRY_CONTRACT_ID = os.environ.get("PRIMUS_REGISTRY_CONTRACT_ID", "")
+    # Read lazily by the publisher; deliberately never exposed elsewhere.
+    PRIMUS_REGISTRY_SECRET_KEY = os.environ.get("PRIMUS_REGISTRY_SECRET_KEY", "")
+    PRIMUS_REGISTRY_NETWORK = os.environ.get("PRIMUS_REGISTRY_NETWORK", "testnet")
+    PRIMUS_REGISTRY_RPC_URL = os.environ.get("PRIMUS_REGISTRY_RPC_URL", "")
+    # Publish after each scheduled check (opt-in; needs registry credentials).
+    PRIMUS_REGISTRY_PUBLISH_ON_CHECK = env_bool("PRIMUS_REGISTRY_PUBLISH_ON_CHECK", False)
+
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True

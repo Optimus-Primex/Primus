@@ -97,6 +97,28 @@ def check_once():
     click.echo(f"Checked {len(monitor_ids)} monitor(s).")
 
 
+@primus_cli.command("publish-status")
+@click.option("--monitor-id", "monitor_id", type=int, required=True)
+@with_appcontext
+def publish_status(monitor_id):
+    """Publish a monitor's latest status to the on-chain registry."""
+
+    from .extensions import db
+    from .models import Monitor
+    from .services.registry import RegistryError, publish_monitor_status
+
+    monitor = db.session.get(Monitor, monitor_id)
+    if monitor is None:
+        raise click.ClickException(f"Monitor {monitor_id} not found.")
+
+    try:
+        tx_hash = publish_monitor_status(monitor, config=_config())
+    except RegistryError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    click.echo(f"Published monitor {monitor.id} status to the registry. Tx hash: {tx_hash}")
+
+
 @primus_cli.command("worker")
 @with_appcontext
 def worker():

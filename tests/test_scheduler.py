@@ -63,3 +63,28 @@ def test_scheduler_opens_incident_on_failure(app, db, sample_monitor):
     from primus.models import Incident
 
     assert Incident.query.filter_by(monitor_id=sample_monitor.id).count() == 1
+
+
+def test_registry_publish_hook_is_opt_in(app, db, sample_monitor, monkeypatch):
+    calls = {}
+
+    class FakePublisher:
+        @classmethod
+        def from_config(cls, config):
+            return cls()
+
+        def publish_status(self, monitor, check):
+            calls["monitor_id"] = monitor.id
+            calls["check_success"] = check.success
+            return "a" * 64
+
+    monkeypatch.setattr("primus.services.registry.RegistryPublisher", FakePublisher)
+    make_due(db, sample_monitor)
+
+    Scheduler(app, check_func=success).run_once()
+    assert calls == {}
+
+    app.config["PRIMUS_REGISTRY_PUBLISH_ON_CHECK"] = True
+    make_due(db, sample_monitor)
+    Scheduler(app, check_func=success).run_once()
+    assert calls == {"monitor_id": sample_monitor.id, "check_success": True}

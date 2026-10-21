@@ -28,6 +28,9 @@ Python/Flask codebase you can audit in an afternoon.
   Horizon** (ledger lag), **Soroban RPC** (health + passphrase), **Soroban
   contract** event monitoring, and Stellar account/asset checks. See
   [`docs/stellar.md`](docs/stellar.md).
+- **On-chain status publishing** — publish a monitor's latest result to the
+  included Soroban registry contract on Stellar testnet or mainnet with
+  `flask primus publish-status`, using an optional `stellar-sdk` dependency.
 - **Status history** — every check is stored with status code, latency, and the
   error message when it fails.
 - **Incident lifecycle** — an incident opens after N consecutive failures
@@ -131,6 +134,11 @@ All configuration is read from environment variables (see `.env.example`).
 | `PRIMUS_MAX_TIMEOUT`            | `60`                    | Maximum request timeout in seconds.             |
 | `PRIMUS_CHECK_RETRIES`          | `1`                     | Retries per failed check.                       |
 | `PRIMUS_COOKIE_SECURE`          | `0`                     | Set to `1` when serving over HTTPS.             |
+| `PRIMUS_REGISTRY_CONTRACT_ID`   | *(unset)*               | Deployed Soroban registry contract id (`C...`). |
+| `PRIMUS_REGISTRY_SECRET_KEY`    | *(unset)*               | Signer secret key; never commit or log it.      |
+| `PRIMUS_REGISTRY_NETWORK`       | `testnet`               | `testnet` or `mainnet`.                         |
+| `PRIMUS_REGISTRY_RPC_URL`       | network default         | Optional Soroban RPC endpoint override.         |
+| `PRIMUS_REGISTRY_PUBLISH_ON_CHECK` | `0`                  | Publish automatically after each scheduled check.|
 
 ## Running with Docker
 
@@ -176,7 +184,7 @@ primus/
 ├── api/                 # JSON REST API blueprint
 ├── auth/                # session auth blueprint
 ├── dashboard/           # server-rendered UI blueprint
-├── services/            # checker, incidents, scheduler, validators
+├── services/            # checker, incidents, scheduler, registry, validators
 │   └── check_types/     # HTTP + Stellar/Soroban check-type plugins
 ├── templates/           # Jinja templates
 └── static/              # CSS and vanilla JS

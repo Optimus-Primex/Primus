@@ -131,7 +131,7 @@ class Scheduler:
                 allow_private=self.app.config["PRIMUS_ALLOW_PRIVATE_TARGETS"],
                 user_agent=self.app.config["PRIMUS_USER_AGENT"],
             )
-            _, event = record_check(
+            check, event = record_check(
                 monitor,
                 result,
                 failure_threshold=self.app.config["PRIMUS_FAILURE_THRESHOLD"],
@@ -143,7 +143,21 @@ class Scheduler:
                     monitor.id,
                     monitor.name,
                 )
+            if self.app.config.get("PRIMUS_REGISTRY_PUBLISH_ON_CHECK"):
+                self._publish_registry(monitor, check)
             return event
+
+    def _publish_registry(self, monitor, check) -> None:
+        """Publish the just-recorded check when the opt-in hook is enabled."""
+
+        from .registry import RegistryPublisher
+
+        try:
+            publisher = RegistryPublisher.from_config(self.app.config)
+            tx_hash = publisher.publish_status(monitor, check)
+            self.log.info("Published monitor %s status on-chain (tx %s)", monitor.id, tx_hash)
+        except Exception:  # noqa: BLE001 - publishing must never break checks
+            self.log.exception("Registry publish failed for monitor %s", monitor.id)
 
 
 def start_scheduler_from_config(app):

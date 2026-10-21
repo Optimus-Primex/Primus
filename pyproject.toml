@@ -19,6 +19,7 @@ classifiers = [
 
 [project.optional-dependencies]
 postgres = ["psycopg[binary]>=3.2"]
+stellar = ["stellar-sdk==16.1.0"]
 
 [project.urls]
 Homepage = "https://github.com/Optimus-Primex/Primus"
