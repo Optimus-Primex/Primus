@@ -33,17 +33,21 @@ class PublicOnlyRedirectHandler(urlrequest.HTTPRedirectHandler):
     ``urllib`` follows redirects by default, so validating only the original
     URL would let a permitted public host redirect the checker into loopback or
     cloud metadata endpoints.  Each redirect target is re-validated here; an
-    unsafe hop aborts the request with :class:`URLError`.
+    unsafe hop aborts the request with :class:`URLError`.  When
+    ``require_https`` is set, plain-HTTP hops are rejected as well.
     """
 
-    def __init__(self, allow_private: bool = False) -> None:
+    def __init__(self, allow_private: bool = False, require_https: bool = False) -> None:
         super().__init__()
         self.allow_private = allow_private
+        self.require_https = require_https
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         parsed = urlparse(newurl)
         if parsed.scheme.lower() not in ALLOWED_SCHEMES:
             raise URLError(f"redirect to unsupported scheme: {parsed.scheme!r}")
+        if self.require_https and parsed.scheme.lower() != "https":
+            raise URLError("redirect to non-HTTPS target blocked")
         if not parsed.hostname:
             raise URLError("redirect target has no hostname")
         try:
@@ -53,10 +57,14 @@ class PublicOnlyRedirectHandler(urlrequest.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-def build_safe_opener(allow_private: bool = False) -> urlrequest.OpenerDirector:
+def build_safe_opener(
+    allow_private: bool = False, *, require_https: bool = False
+) -> urlrequest.OpenerDirector:
     """Build an opener that re-applies the SSRF guard on every redirect hop."""
 
-    opener = urlrequest.build_opener(PublicOnlyRedirectHandler(allow_private))
+    opener = urlrequest.build_opener(
+        PublicOnlyRedirectHandler(allow_private, require_https=require_https)
+    )
     opener.max_redirections = MAX_REDIRECTS
     return opener
 

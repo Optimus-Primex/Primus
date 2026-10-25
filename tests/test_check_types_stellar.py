@@ -6,13 +6,24 @@ from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
+from fixtures.anchor import (
+    SEP24_DISABLED,
+    SEP24_INFO,
+    SEP31_INFO,
+    STELLAR_TOML,
+    TOML_INVALID,
+    TOML_SEP24_ONLY,
+    TOML_WITHOUT_SERVERS,
+)
 
 from primus.services.check_types import available_types, get_check_type
 from primus.services.check_types.stellar import common
 from primus.services.validators import ValidationError, validate_monitor_payload
 
 REQUEST_JSON = "primus.services.check_types._http_json.request_json"
+REQUEST_TEXT = "primus.services.check_types._http_json.request_text"
 JSON_RPC = "primus.services.check_types._http_json.json_rpc"
+ANCHOR_PUBLIC_HOST = "primus.services.check_types.stellar.anchor.assert_public_host"
 
 ACCOUNT_ID = "G" + "A" * 55
 CONTRACT_ID = "C" + "A" * 55
@@ -50,6 +61,7 @@ def test_stellar_types_are_registered():
         "soroban-contract",
         "stellar-account",
         "stellar-asset",
+        "stellar-anchor",
     } <= slugs
 
 
@@ -297,3 +309,295 @@ def test_api_creates_stellar_monitor(client, api_headers):
     body = response.get_json()
     assert body["type"] == "stellar-horizon"
     assert body["type_config"]["network"] == "testnet"
+
+
+# -- Anchor (SEP-24 / SEP-31) ----------------------------------------------
+def _anchor_monitor(**overrides):
+    values = {
+        "type": "stellar-anchor",
+        "url": "https://anchor.example.com",
+        "timeout_seconds": 5,
+        "type_config": {},
+    }
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+def _anchor_stub(
+    *,
+    toml=STELLAR_TOML,
+    toml_code=200,
+    sep24=SEP24_INFO,
+    sep24_code=200,
+    sep31=SEP31_INFO,
+    sep31_code=200,
+    calls=None,
+):
+    calls = calls if calls is not None else []
+
+    def request_text(url, **kwargs):
+        calls.append({"kind": "text", "url": url, **kwargs})
+        return toml_code, toml, 4.0
+
+    def request_json(url, **kwargs):
+        calls.append({"kind": "json", "url": url, **kwargs})
+        if url.endswith("/sep24/info"):
+            return sep24_code, sep24, 5.0
+        if url.endswith("/sep31/info"):
+            return sep31_code, sep31, 6.0
+        raise AssertionError(f"unexpected URL {url}")
+
+    return request_text, request_json
+
+
+def test_anchor_sep24_and_sep31_success(monkeypatch):
+    calls = []
+    request_text, request_json = _anchor_stub(calls=calls)
+    monkeypatch.setattr(REQUEST_TEXT, request_text)
+    monkeypatch.setattr(REQUEST_JSON, request_json)
+
+    monitor = _anchor_monitor(
+        type_config={
+            "services": "both",
+            "asset_code": "usdc",
+            "require_deposit": True,
+            "require_withdraw": True,
+            "required_fields": ["min_amount", "max_amount"],
+        }
+    )
+    result = get_check_type("stellar-anchor").run(monitor, allow_private=True)
+
+    assert result.success
+    assert result.detail["services"]["sep24"]["url"] == "https://anchor.example.com/sep24"
+    assert result.detail["assets"]["sep24"]["USDC"] == {
+        "deposit": True,
+        "withdraw": True,
+    }
+    assert result.detail["assets"]["sep31"]["USDC"]["receive"] is True
+    assert calls[0]["url"].endswith("/.well-known/stellar.toml")
+    assert all(call["require_https"] is True for call in calls)
+
+
+def test_anchor_auto_uses_only_advertised_services(monkeypatch):
+    calls = []
+    request_text, request_json = _anchor_stub(toml=TOML_SEP24_ONLY, calls=calls)
+    monkeypatch.setattr(REQUEST_TEXT, request_text)
+    monkeypatch.setattr(REQUEST_JSON, request_json)
+
+    result = get_check_type("stellar-anchor").run(
+        _anchor_monitor(type_config={"asset_code": "USDC"}), allow_private=True
+    )
+
+    assert result.success
+    assert "sep24" in result.detail["services"]
+    assert "sep31" not in result.detail["services"]
+    assert not any(call["kind"] == "json" and "/sep31/" in call["url"] for call in calls)
+
+
+def test_anchor_missing_transfer_server_fails(monkeypatch):
+    request_text, request_json = _anchor_stub(toml=TOML_WITHOUT_SERVERS)
+    monkeypatch.setattr(REQUEST_TEXT, request_text)
+    monkeypatch.setattr(REQUEST_JSON, request_json)
+
+    result = get_check_type("stellar-anchor").run(_anchor_monitor(), allow_private=True)
+
+    assert not result.success
+    assert "TRANSFER_SERVER_SEP0024" in result.error
+
+
+def test_anchor_non_https_home_domain_fails(monkeypatch):
+    monkeypatch.setattr(REQUEST_TEXT, _anchor_stub()[0])
+    monkeypatch.setattr(REQUEST_JSON, _anchor_stub()[1])
+
+    result = get_check_type("stellar-anchor").run(
+        _anchor_monitor(url="http://anchor.example.com"), allow_private=True
+    )
+
+    assert not result.success
+    assert "HTTPS" in result.error
+
+
+def test_anchor_rejects_http_transfer_server(monkeypatch):
+    toml = 'TRANSFER_SERVER_SEP0024 = "http://anchor.example.com/sep24"\n'
+    request_text, request_json = _anchor_stub(toml=toml)
+    monkeypatch.setattr(REQUEST_TEXT, request_text)
+    monkeypatch.setattr(REQUEST_JSON, request_json)
+
+    result = get_check_type("stellar-anchor").run(
+        _anchor_monitor(type_config={"services": "sep24"}), allow_private=True
+    )
+
+    assert not result.success
+    assert "SEP24 server must use HTTPS" in result.error
+
+
+def test_anchor_private_host_is_blocked(monkeypatch):
+    def blocked(_hostname, _allow_private=False):
+        raise ValidationError("Target host resolves to a non-public address")
+
+    monkeypatch.setattr(ANCHOR_PUBLIC_HOST, blocked)
+    monkeypatch.setattr(REQUEST_TEXT, _anchor_stub()[0])
+    monkeypatch.setattr(REQUEST_JSON, _anchor_stub()[1])
+
+    result = get_check_type("stellar-anchor").run(_anchor_monitor(), allow_private=False)
+
+    assert not result.success
+    assert "non-public" in result.error
+
+
+def test_anchor_malformed_toml_fails(monkeypatch):
+    request_text, request_json = _anchor_stub(toml=TOML_INVALID)
+    monkeypatch.setattr(REQUEST_TEXT, request_text)
+    monkeypatch.setattr(REQUEST_JSON, request_json)
+
+    result = get_check_type("stellar-anchor").run(_anchor_monitor(), allow_private=True)
+
+    assert not result.success
+    assert "invalid stellar.toml" in result.error
+
+
+def test_anchor_info_http_error_fails(monkeypatch):
+    request_text, request_json = _anchor_stub(sep24_code=503, sep24=None)
+    monkeypatch.setattr(REQUEST_TEXT, request_text)
+    monkeypatch.setattr(REQUEST_JSON, request_json)
+
+    result = get_check_type("stellar-anchor").run(
+        _anchor_monitor(type_config={"services": "sep24"}), allow_private=True
+    )
+
+    assert not result.success
+    assert "HTTP 503" in result.error
+
+
+def test_anchor_disabled_deposit_asset_fails(monkeypatch):
+    request_text, request_json = _anchor_stub(sep24=SEP24_DISABLED)
+    monkeypatch.setattr(REQUEST_TEXT, request_text)
+    monkeypatch.setattr(REQUEST_JSON, request_json)
+
+    result = get_check_type("stellar-anchor").run(
+        _anchor_monitor(
+            type_config={
+                "services": "sep24",
+                "asset_code": "USDC",
+                "require_deposit": True,
+            }
+        ),
+        allow_private=True,
+    )
+
+    assert not result.success
+    assert "deposit disabled" in result.error
+
+
+def test_anchor_disabled_asset_fails_without_flags(monkeypatch):
+    request_text, request_json = _anchor_stub(sep24=SEP24_DISABLED)
+    monkeypatch.setattr(REQUEST_TEXT, request_text)
+    monkeypatch.setattr(REQUEST_JSON, request_json)
+
+    result = get_check_type("stellar-anchor").run(
+        _anchor_monitor(type_config={"services": "sep24", "asset_code": "USDC"}),
+        allow_private=True,
+    )
+
+    assert not result.success
+    assert "disabled on SEP24" in result.error
+
+
+def test_anchor_missing_required_fields_fails(monkeypatch):
+    request_text, request_json = _anchor_stub()
+    monkeypatch.setattr(REQUEST_TEXT, request_text)
+    monkeypatch.setattr(REQUEST_JSON, request_json)
+
+    result = get_check_type("stellar-anchor").run(
+        _anchor_monitor(
+            type_config={
+                "services": "sep31",
+                "asset_code": "USDC",
+                "required_fields": ["fee_fixed"],
+            }
+        ),
+        allow_private=True,
+    )
+
+    assert not result.success
+    assert "missing fields: fee_fixed" in result.error
+
+
+def test_anchor_asset_not_offered_fails(monkeypatch):
+    request_text, request_json = _anchor_stub()
+    monkeypatch.setattr(REQUEST_TEXT, request_text)
+    monkeypatch.setattr(REQUEST_JSON, request_json)
+
+    result = get_check_type("stellar-anchor").run(
+        _anchor_monitor(type_config={"services": "sep24", "asset_code": "EURC"}),
+        allow_private=True,
+    )
+
+    assert not result.success
+    assert "not offered" in result.error
+
+
+def test_validate_anchor_config(app):
+    cleaned = validate_monitor_payload(
+        {
+            "name": "Anchor",
+            "url": "https://anchor.example.com",
+            "type": "stellar-anchor",
+            "type_config": {
+                "network": "testnet",
+                "services": "both",
+                "asset_code": "usdc",
+                "require_deposit": "true",
+                "require_withdraw": "true",
+                "required_fields": ["min_amount", "min_amount", " max_amount "],
+            },
+        },
+        app.config,
+    )
+
+    config = cleaned["type_config"]
+    assert cleaned["type"] == "stellar-anchor"
+    assert config["services"] == "both"
+    assert config["asset_code"] == "USDC"
+    assert config["require_deposit"] is True
+    assert config["require_withdraw"] is True
+    assert config["required_fields"] == ["min_amount", "max_amount"]
+
+
+def test_validate_anchor_rejects_bad_services(app):
+    with pytest.raises(ValidationError):
+        validate_monitor_payload(
+            {
+                "name": "x",
+                "url": "https://anchor.example.com",
+                "type": "stellar-anchor",
+                "type_config": {"services": "sep99"},
+            },
+            app.config,
+        )
+
+
+def test_validate_anchor_rejects_bad_asset_code(app):
+    with pytest.raises(ValidationError):
+        validate_monitor_payload(
+            {
+                "name": "x",
+                "url": "https://anchor.example.com",
+                "type": "stellar-anchor",
+                "type_config": {"asset_code": "USD-C"},
+            },
+            app.config,
+        )
+
+
+def test_validate_anchor_rejects_withdraw_with_sep31(app):
+    with pytest.raises(ValidationError):
+        validate_monitor_payload(
+            {
+                "name": "x",
+                "url": "https://anchor.example.com",
+                "type": "stellar-anchor",
+                "type_config": {"services": "sep31", "require_withdraw": True},
+            },
+            app.config,
+        )

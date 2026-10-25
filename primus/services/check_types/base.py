@@ -52,6 +52,8 @@ class CheckType(ABC):
     label: str = ""
     #: One-line explanation of what the type does.
     description: str = ""
+    #: Optional help text shown in the dashboard form.
+    help_text: str = ""
     #: Whether ``Monitor.url`` is required for this type.
     requires_url: bool = False
     #: Default values merged into ``Monitor.type_config``.

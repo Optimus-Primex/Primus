@@ -14,10 +14,17 @@ are protocol-agnostic.
 | `soroban-contract` | A deployed contract's event stream via `getEvents` | `network`, `contract_id`, `lookback_ledgers`, `expect_events` |
 | `stellar-account` | An account exists and its XLM balance meets a minimum | `network`, `account_id`, `min_xlm_balance` |
 | `stellar-asset` | An issued asset exists on Horizon | `network`, `asset_code`, `asset_issuer` |
+| `stellar-anchor` | An anchor's `stellar.toml` and SEP-24/SEP-31 info endpoints | `network`, `services`, `asset_code`, `require_deposit`, `require_withdraw`, `required_fields` |
 
 All Stellar types are Horizon REST or Soroban JSON-RPC calls, so no extra
 Python dependency is required. `network` is one of `mainnet`, `testnet`,
 `futurenet`.
+
+`stellar-anchor` reads the anchor home domain from `url` (it must be HTTPS),
+fetches `/.well-known/stellar.toml`, and calls the SEP-24 `/sep24/info` and/or
+SEP-31 `/sep31/info` endpoint advertised there. Every URL, including redirect
+targets, goes through the same SSRF guard as the HTTP check type. Plain-HTTP
+home domains, transfer servers, and redirects are rejected.
 
 ## Known networks
 
@@ -73,6 +80,34 @@ Check an account's XLM balance:
   }
 }
 ```
+
+Check a SEP-24/SEP-31 anchor (the URL is the anchor's home domain, not the
+transfer server):
+
+```json
+{
+  "name": "Anchor USDC",
+  "url": "https://anchor.example.com",
+  "type": "stellar-anchor",
+  "type_config": {
+    "network": "mainnet",
+    "services": "both",
+    "asset_code": "USDC",
+    "require_deposit": true,
+    "require_withdraw": true,
+    "required_fields": ["min_amount", "max_amount"]
+  }
+}
+```
+
+- `services`: `auto` (default; use whichever servers the TOML advertises),
+  `sep24`, `sep31`, or `both`.
+- `asset_code`: optional; when set it must appear in the selected info
+  document(s).
+- `require_deposit` / `require_withdraw`: require an enabled deposit or
+  withdrawal asset. `require_withdraw` applies to SEP-24 only.
+- `required_fields`: optional list of field names that must be present on the
+  asset's `/info` entry (for example `min_amount`, `max_amount`, `fee_fixed`).
 
 ## The on-chain registry
 

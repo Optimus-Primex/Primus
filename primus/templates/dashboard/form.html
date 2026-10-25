@@ -64,6 +64,15 @@
               placeholder="{}">{{ current_config | tojson if current_config is mapping else current_config }}</textarea>
     <p class="muted">Protocol-specific options, e.g. Stellar network or contract id. Leave empty for defaults.</p>
 
+    <details class="muted">
+      <summary>Check type help</summary>
+      {% for check_type in check_types %}
+        {% if check_type.help_text %}
+          <p><strong>{{ check_type.label }}:</strong> {{ check_type.help_text }}</p>
+        {% endif %}
+      {% endfor %}
+    </details>
+
     {% set is_enabled = (val.enabled if val.enabled is defined else (monitor.enabled if monitor else True)) %}
     <label class="checkbox">
       <input type="checkbox" name="enabled" {% if is_enabled %}checked{% endif %}> Enabled
