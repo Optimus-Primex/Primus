@@ -134,6 +134,35 @@ def test_validate_payload_rejects_non_object_type_config(app):
         )
 
 
+def test_http_redirect_config_is_normalised(app):
+    cleaned = validate_monitor_payload(
+        {
+            "name": "x",
+            "url": "https://example.com",
+            "type_config": {"redirect_policy": "NO-FOLLOW", "max_redirects": "3"},
+        },
+        app.config,
+    )
+    assert cleaned["type_config"] == {"redirect_policy": "no-follow", "max_redirects": 3}
+
+
+@pytest.mark.parametrize(
+    "type_config",
+    [
+        {"redirect_policy": "sometimes"},
+        {"max_redirects": "many"},
+        {"max_redirects": -1},
+        {"max_redirects": 21},
+    ],
+)
+def test_http_redirect_config_rejects_bad_values(app, type_config):
+    with pytest.raises(ValidationError):
+        validate_monitor_payload(
+            {"name": "x", "url": "https://example.com", "type_config": type_config},
+            app.config,
+        )
+
+
 def test_validate_payload_url_optional_for_non_url_type(app, register_temp):
     register_temp(UrlOptionalCheckType())
     cleaned = validate_monitor_payload({"name": "x", "type": "no-url"}, app.config)

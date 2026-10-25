@@ -89,6 +89,12 @@ def http_server():
             if self.command != "HEAD":
                 self.wfile.write(body)
 
+        def _redirect(self, location: str, code: int = 302) -> None:
+            self.send_response(code)
+            self.send_header("Location", location)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
         def do_GET(self):  # noqa: N802 - http.server API
             if self.path == "/ok":
                 self._respond(200, b"ok")
@@ -96,6 +102,19 @@ def http_server():
                 self._respond(500, b"boom")
             elif self.path == "/missing":
                 self._respond(404, b"nope")
+            elif self.path == "/redirect":
+                self._redirect("/ok")
+            elif self.path == "/redirect-chain":
+                self._redirect("/redirect")
+            elif self.path == "/redirect-loop":
+                self._redirect("/redirect-loop")
+            elif self.path.startswith("/redirect-count/"):
+                # /redirect-count/N bounces N times before reaching /ok.
+                try:
+                    remaining = int(self.path.rsplit("/", 1)[1])
+                except ValueError:
+                    remaining = 0
+                self._redirect("/ok" if remaining <= 0 else f"/redirect-count/{remaining - 1}")
             else:
                 self._respond(404, b"unknown")
 
