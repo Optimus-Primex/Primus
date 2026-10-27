@@ -7,9 +7,14 @@ from types import SimpleNamespace
 from primus.services.checker import CheckResult, check_with_retries, perform_check
 
 
-def make_monitor(url, method="GET", timeout=5, expected=200):
+def make_monitor(url, method="GET", timeout=5, expected=200, type_config=None):
     return SimpleNamespace(
-        url=url, method=method, timeout_seconds=timeout, expected_status=expected
+        type="http",
+        type_config=type_config or {},
+        url=url,
+        method=method,
+        timeout_seconds=timeout,
+        expected_status=expected,
     )
 
 
@@ -78,3 +83,64 @@ def test_check_with_retries_exhausts_attempts(monkeypatch):
     )
     assert not result.success
     assert len(calls) == 3
+
+
+# -- redirect policy -------------------------------------------------------
+def test_redirects_are_followed_by_default(http_server):
+    result = perform_check(make_monitor(f"{http_server}/redirect-chain"), allow_private=True)
+    assert result.success
+    assert result.status_code == 200
+    assert result.detail["redirect_policy"] == "follow"
+    assert result.detail["redirect_count"] == 2
+    assert result.detail["final_url"].endswith("/ok")
+    assert result.detail["redirect_chain"][0].endswith("/redirect")
+    assert result.detail["redirect_chain"][-1].endswith("/ok")
+
+
+def test_no_follow_reports_the_3xx_directly(http_server):
+    result = perform_check(
+        make_monitor(
+            f"{http_server}/redirect",
+            expected=302,
+            type_config={"redirect_policy": "no-follow"},
+        ),
+        allow_private=True,
+    )
+    assert result.success
+    assert result.status_code == 302
+    assert result.detail["redirect_policy"] == "no-follow"
+    assert result.detail["redirect_count"] == 0
+    assert result.detail["final_url"] == f"{http_server}/redirect"
+    assert result.detail["redirect_location"].endswith("/ok")
+
+
+def test_no_follow_does_not_silently_pass_expected_200(http_server):
+    result = perform_check(
+        make_monitor(
+            f"{http_server}/redirect",
+            type_config={"redirect_policy": "no-follow"},
+        ),
+        allow_private=True,
+    )
+    assert not result.success
+    assert result.status_code == 302
+    assert "Expected HTTP 200" in result.error
+
+
+def test_redirect_chain_is_capped(http_server):
+    result = perform_check(
+        make_monitor(
+            f"{http_server}/redirect-count/3",
+            type_config={"redirect_policy": "follow", "max_redirects": 1},
+        ),
+        allow_private=True,
+    )
+    assert not result.success
+    assert "too many redirects" in result.error
+    assert result.detail["redirect_count"] == 1
+
+
+def test_redirect_loops_fail_cleanly(http_server):
+    result = perform_check(make_monitor(f"{http_server}/redirect-loop"), allow_private=True)
+    assert not result.success
+    assert "redirect loop" in result.error

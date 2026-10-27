@@ -12,8 +12,8 @@ import ipaddress
 import re
 import socket
 from urllib import request as urlrequest
-from urllib.error import URLError
-from urllib.parse import urlparse
+from urllib.error import HTTPError, URLError
+from urllib.parse import urljoin, urlparse
 
 ALLOWED_METHODS = {"GET", "HEAD"}
 ALLOWED_SCHEMES = {"http", "https"}
@@ -34,14 +34,36 @@ class PublicOnlyRedirectHandler(urlrequest.HTTPRedirectHandler):
     URL would let a permitted public host redirect the checker into loopback or
     cloud metadata endpoints.  Each redirect target is re-validated here; an
     unsafe hop aborts the request with :class:`URLError`.
+
+    The handler can also be configured to stop at the first redirect
+    (``follow_redirects=False``), cap the number of hops, and record the chain
+    of URLs it visited so callers can surface it alongside a check result.
     """
 
-    def __init__(self, allow_private: bool = False) -> None:
+    def __init__(
+        self,
+        allow_private: bool = False,
+        *,
+        follow_redirects: bool = True,
+        max_redirects: int = MAX_REDIRECTS,
+        initial_url: str | None = None,
+    ) -> None:
         super().__init__()
         self.allow_private = allow_private
+        self.follow_redirects = follow_redirects
+        self.max_redirects = max(0, int(max_redirects))
+        self.redirect_chain: list[str] = []
+        #: The target of the first redirect when ``follow_redirects`` is false.
+        self.blocked_location: str | None = None
+        self._visited = {initial_url} if initial_url else set()
+        # Our own checks produce clearer errors; keep the stdlib limits out of
+        # the way while still bounding pathological responses.
+        self.max_redirections = self.max_redirects + 1
+        self.max_repeats = self.max_redirects + 1
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        parsed = urlparse(newurl)
+        absolute = urljoin(req.full_url, newurl)
+        parsed = urlparse(absolute)
         if parsed.scheme.lower() not in ALLOWED_SCHEMES:
             raise URLError(f"redirect to unsupported scheme: {parsed.scheme!r}")
         if not parsed.hostname:
@@ -50,14 +72,46 @@ class PublicOnlyRedirectHandler(urlrequest.HTTPRedirectHandler):
             assert_public_host(parsed.hostname, self.allow_private)
         except ValidationError as exc:
             raise URLError(f"redirect blocked: {exc}") from exc
-        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+        if not self.follow_redirects:
+            self.blocked_location = absolute
+            # Surface the 3xx response itself instead of following it.
+            raise HTTPError(absolute, code, msg, headers, fp)
+
+        if absolute in self._visited:
+            raise URLError(f"redirect loop detected at {absolute}")
+        if len(self.redirect_chain) >= self.max_redirects:
+            raise URLError(f"too many redirects (max {self.max_redirects})")
+
+        self._visited.add(absolute)
+        self.redirect_chain.append(absolute)
+        return super().redirect_request(req, fp, code, msg, headers, absolute)
+
+
+def build_safe_opener_with_handler(
+    allow_private: bool = False,
+    *,
+    follow_redirects: bool = True,
+    max_redirects: int = MAX_REDIRECTS,
+    initial_url: str | None = None,
+) -> tuple[urlrequest.OpenerDirector, PublicOnlyRedirectHandler]:
+    """Build an opener and return it together with its redirect handler."""
+
+    handler = PublicOnlyRedirectHandler(
+        allow_private,
+        follow_redirects=follow_redirects,
+        max_redirects=max_redirects,
+        initial_url=initial_url,
+    )
+    opener = urlrequest.build_opener(handler)
+    opener.max_redirections = handler.max_redirects
+    return opener, handler
 
 
 def build_safe_opener(allow_private: bool = False) -> urlrequest.OpenerDirector:
     """Build an opener that re-applies the SSRF guard on every redirect hop."""
 
-    opener = urlrequest.build_opener(PublicOnlyRedirectHandler(allow_private))
-    opener.max_redirections = MAX_REDIRECTS
+    opener, _handler = build_safe_opener_with_handler(allow_private)
     return opener
 
 

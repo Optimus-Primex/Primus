@@ -47,6 +47,8 @@ Returns `{"monitors": [ ... ]}`. A monitor object looks like:
 {
   "id": 1,
   "name": "Example",
+  "type": "http",
+  "type_config": {"redirect_policy": "follow", "max_redirects": 5},
   "url": "https://example.com",
   "method": "GET",
   "expected_status": 200,
@@ -73,13 +75,56 @@ Body (JSON):
 | ------------------ | -------- | -------------------------------------------------- |
 | `name`             | yes      | 1–120 characters.                                   |
 | `url`              | yes      | `http`/`https`; private hosts blocked by default.  |
+| `type`             | no       | Check type slug, default `http` (see `GET /api/health` and the dashboard). |
+| `type_config`      | no       | JSON object with type-specific options.             |
 | `method`           | no       | `GET` (default) or `HEAD`.                          |
 | `expected_status`  | no       | 100–599, default `200`.                             |
 | `timeout_seconds`  | no       | 1–`PRIMUS_MAX_TIMEOUT`.                             |
 | `interval_seconds` | no       | `PRIMUS_MIN_INTERVAL`–`PRIMUS_MAX_INTERVAL`.        |
 | `enabled`          | no       | Boolean, default `true`.                            |
 
+For `type: "http"`, `type_config` accepts the redirect controls described
+below.
+
 Returns `201` with the created monitor.
+
+#### HTTP redirect policy
+
+By default an HTTP check follows up to five redirects and the final response
+is compared with `expected_status`. Configure the behaviour with
+`type_config`:
+
+```json
+{
+  "name": "Example",
+  "url": "https://example.com/old-path",
+  "type_config": {
+    "redirect_policy": "follow",
+    "max_redirects": 5
+  }
+}
+```
+
+| Field             | Values                | Default  | Notes                                           |
+| ----------------- | --------------------- | -------- | ----------------------------------------------- |
+| `redirect_policy` | `follow`, `no-follow` | `follow` | `no-follow` reports the `3xx` response itself.   |
+| `max_redirects`   | `0`–`20`              | `5`      | Redirect hops allowed; `0` is equivalent to `no-follow`. |
+
+Every check stores the redirect outcome in `check.detail`:
+
+```json
+{
+  "redirect_policy": "follow",
+  "final_url": "https://example.com/new-path",
+  "redirect_chain": ["https://example.com/new-path"],
+  "redirect_count": 1
+}
+```
+
+With `no-follow`, a `redirect_location` field names the target that was not
+followed. Redirect loops and chains longer than `max_redirects` are reported
+as failed checks with a clear error. Every redirect hop is still re-validated
+by the SSRF guard.
 
 ### `GET /api/monitors/{id}`
 
