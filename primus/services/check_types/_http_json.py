@@ -31,6 +31,7 @@ def request_json(
     user_agent: str = DEFAULT_USER_AGENT,
     allow_private: bool = False,
     extra_headers: dict | None = None,
+    require_https: bool = False,
 ) -> tuple[int, object | None, float]:
     """Perform a JSON request and return ``(status_code, data, latency_ms)``.
 
@@ -40,6 +41,8 @@ def request_json(
     parsed = urlparse(url)
     if parsed.scheme.lower() not in ("http", "https"):
         raise HttpJsonError(f"Unsupported scheme: {parsed.scheme!r}")
+    if require_https and parsed.scheme.lower() != "https":
+        raise HttpJsonError("HTTPS is required for this endpoint")
     try:
         assert_public_host(parsed.hostname, allow_private)
     except ValidationError as exc:
@@ -55,7 +58,7 @@ def request_json(
 
     request = urlrequest.Request(url, data=body, method=method, headers=headers)
 
-    opener = build_safe_opener(allow_private)
+    opener = build_safe_opener(allow_private, require_https=require_https)
     start = time.perf_counter()
     try:
         # Scheme is restricted above and the opener re-checks every redirect
@@ -76,6 +79,58 @@ def request_json(
         return code, json.loads(raw.decode("utf-8")), latency
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise HttpJsonError(f"invalid JSON response: {exc}") from exc
+
+
+def request_text(
+    url: str,
+    *,
+    timeout: int = 10,
+    user_agent: str = DEFAULT_USER_AGENT,
+    allow_private: bool = False,
+    require_https: bool = False,
+    max_bytes: int = 1_000_000,
+) -> tuple[int, str | None, float]:
+    """Fetch a small text document and return ``(status_code, text, latency_ms)``.
+
+    Used for well-known files such as ``stellar.toml``.  The same SSRF guard
+    and redirect checks as :func:`request_json` apply, and ``require_https``
+    rejects plain-HTTP URLs and redirects.
+    """
+
+    parsed = urlparse(url)
+    if parsed.scheme.lower() not in ("http", "https"):
+        raise HttpJsonError(f"Unsupported scheme: {parsed.scheme!r}")
+    if require_https and parsed.scheme.lower() != "https":
+        raise HttpJsonError("HTTPS is required for this endpoint")
+    try:
+        assert_public_host(parsed.hostname, allow_private)
+    except ValidationError as exc:
+        raise HttpJsonError(truncate(str(exc))) from exc
+
+    request = urlrequest.Request(url, headers={"User-Agent": user_agent, "Accept": "text/plain"})
+    opener = build_safe_opener(allow_private, require_https=require_https)
+    start = time.perf_counter()
+    try:
+        # Scheme is restricted above and the opener re-checks every redirect
+        # target before following it.
+        with opener.open(request, timeout=timeout) as response:  # nosec B310
+            raw = response.read(max_bytes + 1)
+            code = response.getcode()
+    except HTTPError as exc:
+        raw = exc.read(max_bytes + 1)
+        code = exc.code
+    except (URLError, TimeoutError, OSError) as exc:
+        raise HttpJsonError(truncate(str(exc))) from exc
+    latency = round((time.perf_counter() - start) * 1000, 2)
+
+    if len(raw) > max_bytes:
+        raise HttpJsonError(f"response body exceeds {max_bytes} bytes")
+    if not raw:
+        return code, None, latency
+    try:
+        return code, raw.decode("utf-8"), latency
+    except UnicodeDecodeError as exc:
+        raise HttpJsonError(f"invalid UTF-8 response: {exc}") from exc
 
 
 def json_rpc(

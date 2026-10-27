@@ -6,6 +6,7 @@ Registered on package import via :func:`register_stellar_types`.
 from __future__ import annotations
 
 from .account import StellarAccountCheck, StellarAssetCheck
+from .anchor import StellarAnchorCheck
 from .horizon import StellarHorizonCheck
 from .soroban_contract import SorobanContractCheck
 from .soroban_rpc import SorobanRpcCheck
@@ -19,12 +20,14 @@ def register_stellar_types(register) -> None:
     register(SorobanContractCheck())
     register(StellarAccountCheck())
     register(StellarAssetCheck())
+    register(StellarAnchorCheck())
 
 
 __all__ = [
     "SorobanContractCheck",
     "SorobanRpcCheck",
     "StellarAccountCheck",
+    "StellarAnchorCheck",
     "StellarAssetCheck",
     "StellarHorizonCheck",
     "register_stellar_types",

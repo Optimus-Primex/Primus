@@ -33,7 +33,8 @@ class PublicOnlyRedirectHandler(urlrequest.HTTPRedirectHandler):
     ``urllib`` follows redirects by default, so validating only the original
     URL would let a permitted public host redirect the checker into loopback or
     cloud metadata endpoints.  Each redirect target is re-validated here; an
-    unsafe hop aborts the request with :class:`URLError`.
+    unsafe hop aborts the request with :class:`URLError`.  When
+    ``require_https`` is set, plain-HTTP hops are rejected as well.
 
     The handler can also be configured to stop at the first redirect
     (``follow_redirects=False``), cap the number of hops, and record the chain
@@ -43,6 +44,7 @@ class PublicOnlyRedirectHandler(urlrequest.HTTPRedirectHandler):
     def __init__(
         self,
         allow_private: bool = False,
+        require_https: bool = False,
         *,
         follow_redirects: bool = True,
         max_redirects: int = MAX_REDIRECTS,
@@ -50,6 +52,7 @@ class PublicOnlyRedirectHandler(urlrequest.HTTPRedirectHandler):
     ) -> None:
         super().__init__()
         self.allow_private = allow_private
+        self.require_https = require_https
         self.follow_redirects = follow_redirects
         self.max_redirects = max(0, int(max_redirects))
         self.redirect_chain: list[str] = []
@@ -66,6 +69,8 @@ class PublicOnlyRedirectHandler(urlrequest.HTTPRedirectHandler):
         parsed = urlparse(absolute)
         if parsed.scheme.lower() not in ALLOWED_SCHEMES:
             raise URLError(f"redirect to unsupported scheme: {parsed.scheme!r}")
+        if self.require_https and parsed.scheme.lower() != "https":
+            raise URLError("redirect to non-HTTPS target blocked")
         if not parsed.hostname:
             raise URLError("redirect target has no hostname")
         try:
@@ -91,6 +96,7 @@ class PublicOnlyRedirectHandler(urlrequest.HTTPRedirectHandler):
 def build_safe_opener_with_handler(
     allow_private: bool = False,
     *,
+    require_https: bool = False,
     follow_redirects: bool = True,
     max_redirects: int = MAX_REDIRECTS,
     initial_url: str | None = None,
@@ -99,6 +105,7 @@ def build_safe_opener_with_handler(
 
     handler = PublicOnlyRedirectHandler(
         allow_private,
+        require_https=require_https,
         follow_redirects=follow_redirects,
         max_redirects=max_redirects,
         initial_url=initial_url,
@@ -108,10 +115,12 @@ def build_safe_opener_with_handler(
     return opener, handler
 
 
-def build_safe_opener(allow_private: bool = False) -> urlrequest.OpenerDirector:
+def build_safe_opener(
+    allow_private: bool = False, *, require_https: bool = False
+) -> urlrequest.OpenerDirector:
     """Build an opener that re-applies the SSRF guard on every redirect hop."""
 
-    opener, _handler = build_safe_opener_with_handler(allow_private)
+    opener, _handler = build_safe_opener_with_handler(allow_private, require_https=require_https)
     return opener
 
 

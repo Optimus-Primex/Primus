@@ -44,6 +44,14 @@ def test_create_monitor_rejects_bad_url(auth_client):
     assert response.status_code == 400
 
 
+def test_new_monitor_form_shows_anchor_help(auth_client):
+    response = auth_client.get("/monitors/new")
+
+    assert response.status_code == 200
+    assert b"stellar-anchor" in response.data
+    assert b"asset_code" in response.data
+
+
 def test_monitor_detail_page(auth_client, sample_monitor):
     response = auth_client.get(f"/monitors/{sample_monitor.id}")
     assert response.status_code == 200
